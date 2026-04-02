@@ -52,14 +52,12 @@ jobs:
           pip install -r requirements.txt || echo "Main requirements installed"
           pip install -r requirements_mobile.txt || echo "Mobile requirements installed"
 
-      - name: Accept Android SDK licenses
+      - name: Accept Android SDK licenses (pre-build)
         run: |
           echo "Pre-accepting Android SDK licenses..."
-          mkdir -p ~/.android
-          mkdir -p ~/.android/licenses
           
-          # Accept licenses by creating the license files directly with their hashes
-          # This is more reliable than trying to pipe input to sdkmanager
+          # Create license files in home directory for all tools
+          mkdir -p ~/.android/licenses
           echo "d56f5187479451eabf01fb78af6dfcb131b33910" > ~/.android/licenses/android-sdk-license
           echo "504667f4c0de7973335447fc6c3b3d07e678066c" > ~/.android/licenses/android-sdk-preview-license
           echo "129e256904b56848df64501b5ed41250192f32e6" > ~/.android/licenses/google-gdk-license
@@ -67,7 +65,10 @@ jobs:
           echo "887daf51f8dce29c925d26ce98a02dd0b7f92d22" > ~/.android/licenses/intel-android-system-image-license
           echo "79bb43eaa2624fc1708a847bd1d61d0f5c2d8d3c" > ~/.android/licenses/arm-linux-androideabi-ndk-license
           
-          echo "License files created successfully"
+          # Set environment variable to help buildozer find licenses
+          export ANDROID_LICENSES_DIR=$HOME/.android/licenses
+          echo "ANDROID_LICENSES_DIR=$ANDROID_LICENSES_DIR" >> $GITHUB_ENV
+          echo "License files created in: $ANDROID_LICENSES_DIR"
 
       - name: Build APK
         run: |
@@ -80,7 +81,28 @@ jobs:
           echo "Buildozer version: $(buildozer --version)"
           echo ""
           
-          buildozer android release -v 2>&1 | tee build.log
+          # Run buildozer in verbose mode to see what's happening
+          buildozer android release -v 2>&1 | tee build.log &
+          BUILD_PID=$!
+          
+          # Give buildozer time to download SDK and hit the license prompt
+          sleep 30
+          
+          # While buildozer is running, proactively accept licenses in the SDK directory if it exists
+          if [ -d "$HOME/.buildozer/android/platform/android-sdk" ]; then
+            echo "Found buildozer SDK directory, accepting licenses..."
+            mkdir -p "$HOME/.buildozer/android/platform/android-sdk/licenses"
+            echo "d56f5187479451eabf01fb78af6dfcb131b33910" > "$HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-license"
+            echo "504667f4c0de7973335447fc6c3b3d07e678066c" > "$HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license"
+            echo "129e256904b56848df64501b5ed41250192f32e6" > "$HOME/.buildozer/android/platform/android-sdk/licenses/google-gdk-license"
+            echo "dfaf6d33d4f163b9e23e234d547c6a31ec42d632" > "$HOME/.buildozer/android/platform/android-sdk/licenses/mips-android-system-image-license"
+            echo "887daf51f8dce29c925d26ce98a02dd0b7f92d22" > "$HOME/.buildozer/android/platform/android-sdk/licenses/intel-android-system-image-license"
+            echo "79bb43eaa2624fc1708a847bd1d61d0f5c2d8d3c" > "$HOME/.buildozer/android/platform/android-sdk/licenses/arm-linux-androideabi-ndk-license"
+            echo "Licenses created in buildozer SDK directory"
+          fi
+          
+          # Wait for buildozer to complete
+          wait $BUILD_PID
           BUILD_EXIT_CODE=$?
           
           echo ""
