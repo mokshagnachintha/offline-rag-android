@@ -1,0 +1,34 @@
+# Export all results
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+csv_llm = f'llm_benchmark_results_{timestamp}.csv'
+csv_emb = f'embedding_benchmark_results_{timestamp}.csv'
+
+df_llm_bench.to_csv(csv_llm, index=False)
+df_embedding_bench.to_csv(csv_emb, index=False)
+
+print(f"✅ Results exported:")
+print(f"  • {csv_llm}")
+print(f"  • {csv_emb}")
+
+# Create summary report
+summary = f"""
+# Quantized Model Benchmark Report
+Generated: {datetime.now()}
+
+## LLM Models Tested: {len(df_llm_bench)}
+- Successful: {(df_llm_bench['status'] == 'success').sum()}
+
+## Embedding Models Tested: {len(df_embedding_bench)}
+- Successful: {(df_embedding_bench['status'] == 'success').sum()}
+
+## O-RAG Current Selection:
+- LLM: Qwen 2.5-1.5B (Q4)
+- Embedding: Nomic Embed Text (Q4)
+- Target: 4GB Android devices
+"""
+
+with open(f'benchmark_report_{timestamp}.txt', 'w') as f:
+    f.write(summary)
+
+print(f"  • benchmark_report_{timestamp}.txt")

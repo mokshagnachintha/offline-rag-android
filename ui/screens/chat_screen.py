@@ -1,15 +1,11 @@
 """
-chat_screen.py — Unified single-screen chat + document interface.
+chat_screen.py — Unified single-screen chat + document interface (Material Design 3).
 
 Design:
-  • Header: "Offline RAG" title only — no tabs or mode toggles.
-  • Chat area inheriting ChatGPT dark style.
-  • Bottom bar: [+] attach  |  [text input pill]  |  [↑ send]
-  • Tap + to pick a PDF/TXT via the native file browser.
-    - Document ingestion progress shown inline as a status card.
-    - Once any doc is loaded the AI auto-answers from it (RAG mode).
-    - With no docs, the AI just chats freely (direct mode).
-  • Model loading / extraction progress shown in the welcome message.
+  • Header: Material Design 3 app bar with branding
+  • Chat area: MD3 message bubbles with smooth animations
+  • Bottom bar: Material input with FAB send button
+  • Documents: Swipe-friendly attachment cards
 """
 from __future__ import annotations
 
@@ -27,19 +23,23 @@ from kivy.metrics           import dp, sp
 from kivy.graphics          import Color, RoundedRectangle, Rectangle
 from kivy.animation         import Animation
 
-# ── Palette ───────────────────────────────────────────────────────── #
-_BG        = (0.102, 0.102, 0.102, 1)   # #1a1a1a  page background
-_HDR_BG    = (0.078, 0.078, 0.078, 1)   # #141414  header strip
-_USER_BG   = (0.184, 0.184, 0.184, 1)   # #2f2f2f  user bubble
-_INPUT_BG  = (0.173, 0.173, 0.173, 1)   # #2c2c2c  text-input wrap
-_GREEN     = (0.098, 0.761, 0.490, 1)   # #19c37d  ChatGPT green
-_ADD_BG    = (0.220, 0.220, 0.220, 1)   # #383838  + button
-_WHITE     = (1,    1,    1,    1)
-_MUTED     = (0.55, 0.55, 0.58, 1)
-_DIVIDER   = (0.20, 0.20, 0.20, 1)
-_DOC_CARD  = (0.12, 0.22, 0.17, 1)      # dark teal for doc status card
-_ATTACH_BG = (0.165, 0.165, 0.165, 1)   # attachment preview card background
-_RED_ICON  = (0.85, 0.18, 0.18, 1)      # PDF icon red
+# Import Material Design 3 theme
+from ui.theme import MD3Colors, MD3Spacing, MD3Radius, MD3Typography, paint_widget, MD3Button
+
+# ── Material Design 3 Palette ──────────────────────────────────────── #
+_BG        = MD3Colors.BG_PRIMARY
+_HDR_BG    = MD3Colors.BG_SECONDARY
+_USER_BG   = MD3Colors.SURFACE_VARIANT
+_INPUT_BG  = MD3Colors.SURFACE
+_ACCENT    = MD3Colors.PRIMARY
+_SEC_ACCENT = MD3Colors.SECONDARY  # Replaces the old ChatGPT green
+_ADD_BG    = MD3Colors.TERTIARY
+_WHITE     = MD3Colors.ON_SURFACE
+_MUTED     = MD3Colors.ON_SURFACE_VARIANT
+_DIVIDER   = MD3Colors.OUTLINE_VARIANT
+_DOC_CARD  = (0.12, 0.22, 0.17, 1)      # Keep for now, can update
+_ATTACH_BG = MD3Colors.SURFACE
+_ACCENT_ICON = MD3Colors.TERTIARY       # Updated accent for icons
 
 
 # ------------------------------------------------------------------ #
@@ -47,7 +47,7 @@ _RED_ICON  = (0.85, 0.18, 0.18, 1)      # PDF icon red
 # ------------------------------------------------------------------ #
 
 def _paint(widget, color, radius: float = 0):
-    """Bind a solid colour background to a widget's canvas.before."""
+    """Bind a solid colour background to a widget's canvas.before (MD3 style)."""
     with widget.canvas.before:
         Color(*color)
         r = (RoundedRectangle(radius=[dp(radius)]) if radius else Rectangle())
@@ -59,24 +59,24 @@ def _paint(widget, color, radius: float = 0):
 
 
 # ------------------------------------------------------------------ #
-#  Avatar circle (letters "U" / "AI")                                 #
+#  Avatar circle (letters "U" / "AI" with MD3 colors)                 #
 # ------------------------------------------------------------------ #
 
 class _Avatar(Widget):
     _COLS = {
-        "user":      (0.40, 0.40, 0.90, 1),
-        "assistant": _GREEN,
-        "system":    (0.80, 0.20, 0.20, 1),
+        "user":      MD3Colors.PRIMARY,
+        "assistant": MD3Colors.SECONDARY,
+        "system":    MD3Colors.ERROR,
     }
 
     def __init__(self, role: str, **kw):
         super().__init__(size_hint=(None, None), size=(dp(32), dp(32)), **kw)
         letter = {"user": "U", "assistant": "AI", "system": "!"}.get(role, "?")
         with self.canvas:
-            Color(*self._COLS.get(role, (0.5, 0.5, 0.5, 1)))
+            Color(*self._COLS.get(role, MD3Colors.SURFACE))
             self._circ = RoundedRectangle(radius=[dp(16)])
         self.bind(pos=self._upd, size=self._upd)
-        self._lbl = Label(text=letter, font_size=sp(11), bold=True, color=_WHITE)
+        self._lbl = Label(text=letter, font_size=sp(11), bold=True, color=MD3Colors.ON_PRIMARY)
         self.add_widget(self._lbl)
 
     def _upd(self, *_):
@@ -86,7 +86,7 @@ class _Avatar(Widget):
 
 
 # ------------------------------------------------------------------ #
-#  Message row (user bubble right / assistant text left)              #
+#  Message row (user bubble right / assistant text left with MD3)     #
 # ------------------------------------------------------------------ #
 
 class MessageRow(BoxLayout):
@@ -94,8 +94,8 @@ class MessageRow(BoxLayout):
         super().__init__(
             orientation="horizontal",
             size_hint=(1, None),
-            padding=[dp(12), dp(8), dp(12), dp(8)],
-            spacing=dp(10),
+            padding=[MD3Spacing.MD, MD3Spacing.SM, MD3Spacing.MD, MD3Spacing.SM],
+            spacing=MD3Spacing.SM,
             **kw,
         )
         self.role = role

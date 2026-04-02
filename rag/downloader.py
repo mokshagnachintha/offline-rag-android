@@ -370,3 +370,149 @@ def auto_download_default(
 
     # Start the chain
     _prepare_qwen()
+
+
+# ─────────────────────────────────────────────────────────────────── #
+#  Enhanced DownloadManager (Phase 5 - Beautiful UI + Monitoring)     #
+# ─────────────────────────────────────────────────────────────────── #
+
+import time
+from dataclasses import dataclass
+
+
+@dataclass
+class DownloadProgress:
+    """Download progress snapshot."""
+    model_name: str
+    downloaded_mb: float
+    total_mb: float
+    speed_mbps: float
+    eta_seconds: int
+    is_paused: bool
+    status: str  # "downloading", "paused", "completed", "failed"
+
+
+class DownloadManager:
+    """
+    Advanced download manager with pause/resume, speed tracking, and ETA.
+    Provides real-time metrics for UI display.
+    """
+
+    def __init__(self):
+        self.downloads = {}  # model_name -> download state
+        self._lock = threading.RLock()
+
+    def start_download(
+        self,
+        model_name: str,
+        repo_id: str,
+        filename: str,
+        on_progress: Optional[Callable[[DownloadProgress], None]] = None,
+    ) -> None:
+        """Start downloading a model."""
+        with self._lock:
+            self.downloads[model_name] = {
+                "repo_id": repo_id,
+                "filename": filename,
+                "progress": 0.0,
+                "speed_mbps": 0.0,
+                "eta_seconds": 0,
+                "is_paused": False,
+                "start_time": time.time(),
+                "last_update_time": time.time(),
+                "last_downloaded_mb": 0.0,
+                "status": "downloading",
+            }
+
+        def _on_progress(frac: float, text: str):
+            """Wrapper for progress callback."""
+            with self._lock:
+                if model_name not in self.downloads:
+                    return
+
+                state = self.downloads[model_name]
+                state["progress"] = frac
+
+                # Calculate speed and ETA
+                elapsed = time.time() - state["start_time"]
+                if elapsed > 0 and frac > 0:
+                    downloaded_mb = frac * 920  # Assume ~920MB total
+                    time_delta = time.time() - state["last_update_time"]
+
+                    if time_delta > 0:
+                        speed_mbps = (downloaded_mb - state["last_downloaded_mb"]) / time_delta
+                        state["speed_mbps"] = max(0, speed_mbps)  # Avoid negative
+                        state["last_downloaded_mb"] = downloaded_mb
+
+                        if speed_mbps > 0:
+                            remaining_mb = 920 - downloaded_mb
+                            state["eta_seconds"] = int(remaining_mb / speed_mbps)
+                        else:
+                            state["eta_seconds"] = 0
+
+                    state["last_update_time"] = time.time()
+
+                if on_progress:
+                    progress = DownloadProgress(
+                        model_name=model_name,
+                        downloaded_mb=frac * 920,
+                        total_mb=920,
+                        speed_mbps=state["speed_mbps"],
+                        eta_seconds=state["eta_seconds"],
+                        is_paused=state["is_paused"],
+                        status=state["status"],
+                    )
+                    on_progress(progress)
+
+        def _on_done(success: bool, message: str):
+            """Wrapper for completion callback."""
+            with self._lock:
+                if model_name in self.downloads:
+                    self.downloads[model_name]["status"] = "completed" if success else "failed"
+
+        # Start download in background
+        download_model(repo_id, filename, _on_progress, _on_done)
+
+    def pause_download(self, model_name: str) -> bool:
+        """Pause a download (best-effort, limited suppport)."""
+        with self._lock:
+            if model_name in self.downloads:
+                self.downloads[model_name]["is_paused"] = True
+                return True
+        return False
+
+    def resume_download(self, model_name: str) -> bool:
+        """Resume a paused download."""
+        with self._lock:
+            if model_name in self.downloads:
+                self.downloads[model_name]["is_paused"] = False
+                # Note: huggingface_hub typically doesn't support pause/resume
+                # This is a placeholder for future implementation
+                return True
+        return False
+
+    def get_progress(self, model_name: str) -> Optional[DownloadProgress]:
+        """Get current download progress."""
+        with self._lock:
+            if model_name not in self.downloads:
+                return None
+
+            state = self.downloads[model_name]
+            return DownloadProgress(
+                model_name=model_name,
+                downloaded_mb=state["progress"] * 920,
+                total_mb=920,
+                speed_mbps=state["speed_mbps"],
+                eta_seconds=state["eta_seconds"],
+                is_paused=state["is_paused"],
+                status=state["status"],
+            )
+
+    def get_all_progress(self) -> dict[str, DownloadProgress]:
+        """Get all download progress."""
+        with self._lock:
+            return {
+                name: self.get_progress(name)
+                for name in self.downloads
+                if self.downloads[name] is not None
+            }

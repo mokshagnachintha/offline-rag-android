@@ -20,6 +20,9 @@ from kivy.clock import mainthread
 from kivy.metrics import dp, sp
 from kivy.graphics import Color, RoundedRectangle
 
+# ── Material Design 3 Theme ──────────────────────────────────────── #
+from ui.theme import MD3Colors, MD3Spacing, MD3Radius, MD3Typography, paint_widget, MD3Button
+
 from rag.downloader import MOBILE_MODELS as GEMMA_MODELS, is_downloaded, download_model
 
 
@@ -54,8 +57,8 @@ class ModelRow(BoxLayout):
 
     def _draw_bg(self):
         with self.canvas.before:
-            Color(0.184, 0.184, 0.184, 1)
-            self._bg = RoundedRectangle(radius=[dp(10)])
+            Color(*MD3Colors.SURFACE_VARIANT)
+            self._bg = RoundedRectangle(radius=[dp(MD3Radius.MEDIUM)])
         self.bind(pos=lambda w, _: setattr(self._bg, "pos", w.pos),
                   size=lambda w, _: setattr(self._bg, "size", w.size))
 
@@ -65,18 +68,21 @@ class ModelRow(BoxLayout):
         top.add_widget(Label(
             text=self.meta["label"],
             halign="left", valign="middle",
-            font_size=sp(12), color=(1, 1, 1, 1),
+            font_size=sp(12), color=MD3Colors.ON_SURFACE,
             text_size=(None, None), size_hint=(1, 1),
         ))
         self.add_widget(top)
 
         # bottom row: status label + action button
-        bottom = BoxLayout(size_hint=(1, None), height=dp(34), spacing=dp(6))
+        bottom = BoxLayout(
+            size_hint=(1, None), height=dp(34),
+            spacing=MD3Spacing.MD,
+        )
 
         self._status_lbl = Label(
             text="", size_hint=(1, 1),
             font_size=sp(10), halign="left", valign="middle",
-            color=(0.65, 0.65, 0.65, 1),
+            color=MD3Colors.ON_SURFACE_VARIANT,
         )
         bottom.add_widget(self._status_lbl)
 
@@ -104,21 +110,21 @@ class ModelRow(BoxLayout):
             loaded = llm.is_loaded() and Path(llm._model_path or "").name == fname
             if loaded:
                 self._status_lbl.text  = "Loaded "
-                self._status_lbl.color = (0.4, 0.9, 0.4, 1)
+                self._status_lbl.color = MD3Colors.SUCCESS
                 self._btn.text             = "Loaded"
-                self._btn.background_color = (0.25, 0.55, 0.25, 1)
+                self._btn.background_color = MD3Colors.SUCCESS
                 self._btn.disabled         = True
             else:
                 self._status_lbl.text  = "Downloaded"
-                self._status_lbl.color = (0.55, 0.55, 0.55, 1)
+                self._status_lbl.color = MD3Colors.ON_SURFACE_VARIANT
                 self._btn.text             = "Load"
-                self._btn.background_color = (0.098, 0.761, 0.490, 1)
+                self._btn.background_color = MD3Colors.SUCCESS
                 self._btn.disabled         = False
         else:
             self._status_lbl.text  = f"~{self.meta['size_mb']} MB  not downloaded"
-            self._status_lbl.color = (0.55, 0.55, 0.55, 1)
+            self._status_lbl.color = MD3Colors.ON_SURFACE_VARIANT
             self._btn.text             = "Download"
-            self._btn.background_color = (0.098, 0.500, 0.350, 1)
+            self._btn.background_color = MD3Colors.SECONDARY
             self._btn.disabled         = False
 
     # ---- progress bar helpers ----
@@ -202,7 +208,7 @@ class SettingsScreen(Screen):
 
         # ---- page bg ----
         with root.canvas.before:
-            Color(0.129, 0.129, 0.129, 1)
+            Color(*MD3Colors.BG_PRIMARY)
             self._root_bg = RoundedRectangle()
         root.bind(pos=lambda w,_: setattr(self._root_bg,'pos',w.pos),
                   size=lambda w,_: setattr(self._root_bg,'size',w.size))
@@ -210,13 +216,13 @@ class SettingsScreen(Screen):
         # ---- header ----
         header = BoxLayout(size_hint=(1, None), height=dp(54))
         with header.canvas.before:
-            Color(0.102, 0.102, 0.102, 1)
+            Color(*MD3Colors.BG_SECONDARY)
             self._hdr_rect = RoundedRectangle(radius=[0])
         header.bind(pos=lambda w, _: setattr(self._hdr_rect, "pos", w.pos),
                     size=lambda w, _: setattr(self._hdr_rect, "size", w.size))
         header.add_widget(Label(
-            text="[b]Models[/b]", markup=True,
-            color=(1, 1, 1, 1), font_size=sp(16),
+            text="[b]⚙  Models[/b]", markup=True,
+            color=MD3Colors.ON_SURFACE, font_size=sp(16),
             halign="center", valign="middle",
         ))
         root.add_widget(header)
@@ -225,11 +231,11 @@ class SettingsScreen(Screen):
         self._dl_banner = BoxLayout(
             orientation="vertical",
             size_hint=(1, None), height=0,
-            padding=[dp(10), dp(4)],
-            spacing=dp(2),
+            padding=[MD3Spacing.MD, MD3Spacing.SM],
+            spacing=MD3Spacing.SM,
         )
         with self._dl_banner.canvas.before:
-            Color(0.08, 0.22, 0.38, 1)
+            Color(*MD3Colors.TERTIARY)
             self._dl_bg = RoundedRectangle(radius=[0])
         self._dl_banner.bind(
             pos=lambda w, _: setattr(self._dl_bg, "pos", w.pos),
@@ -239,7 +245,7 @@ class SettingsScreen(Screen):
             text="Downloading Gemma 3 4B Q4...",
             size_hint=(1, None), height=dp(20),
             font_size=sp(11), halign="left", valign="middle",
-            color=(0.85, 0.92, 1.0, 1),
+            color=MD3Colors.ON_SURFACE,
         )
         self._dl_prog = ProgressBar(
             max=100, value=0,
@@ -250,19 +256,22 @@ class SettingsScreen(Screen):
         root.add_widget(self._dl_banner)
 
         # ---- current model status + unload ----
-        status_row = BoxLayout(size_hint=(1, None), height=dp(46), spacing=dp(8),
-                               padding=[dp(10), dp(4)])
+        status_row = BoxLayout(
+            size_hint=(1, None), height=dp(46),
+            spacing=MD3Spacing.MD,
+            padding=[MD3Spacing.MD, MD3Spacing.SM],
+        )
         self._model_lbl = Label(
             text="No model loaded.",
             size_hint=(1, 1), font_size=sp(12),
             halign="left", valign="middle",
-            color=(0.9, 0.6, 0.3, 1),
+            color=MD3Colors.WARNING,
         )
         status_row.add_widget(self._model_lbl)
         unload_btn = Button(
             text="Unload", size_hint=(None, 1), width=dp(72),
             font_size=sp(12), background_normal="",
-            background_color=(0.55, 0.15, 0.15, 1),
+            background_color=MD3Colors.ERROR,
         )
         unload_btn.bind(on_release=self._on_unload)
         status_row.add_widget(unload_btn)
@@ -270,10 +279,10 @@ class SettingsScreen(Screen):
 
         # ---- section label ----
         root.add_widget(Label(
-            text="  Gemma models (tap Download then Load):",
+            text="  🦙 Gemma models (tap Download then Load):",
             size_hint=(1, None), height=dp(26),
             font_size=sp(11), halign="left",
-            color=(0.6, 0.6, 0.6, 1),
+            color=MD3Colors.ON_SURFACE_VARIANT,
         ))
 
         # ---- Gemma model catalogue ----
@@ -281,8 +290,8 @@ class SettingsScreen(Screen):
         self._list = BoxLayout(
             orientation="vertical",
             size_hint=(1, None),
-            spacing=dp(6),
-            padding=[dp(8), dp(6)],
+            spacing=MD3Spacing.MD,
+            padding=[MD3Spacing.MD, MD3Spacing.SM],
         )
         self._list.bind(minimum_height=self._list.setter("height"))
 
@@ -296,32 +305,33 @@ class SettingsScreen(Screen):
 
         # ---- manual path ----
         root.add_widget(Label(
-            text="  Or load a local .gguf file manually:",
+            text="  📁 Or load a local .gguf file manually:",
             size_hint=(1, None), height=dp(24),
             font_size=sp(11), halign="left",
-            color=(0.6, 0.6, 0.6, 1),
+            color=MD3Colors.ON_SURFACE_VARIANT,
         ))
         bar = BoxLayout(
             size_hint=(1, None), height=dp(60),
-            spacing=dp(8), padding=[dp(12), dp(8)],
+            spacing=MD3Spacing.MD,
+            padding=[MD3Spacing.MD, MD3Spacing.MD],
         )
         with bar.canvas.before:
-            Color(0.102, 0.102, 0.102, 1)
+            Color(*MD3Colors.BG_SECONDARY)
             self._bar_bg = RoundedRectangle(radius=[0])
         bar.bind(pos=lambda w, _: setattr(self._bar_bg, "pos", w.pos),
                  size=lambda w, _: setattr(self._bar_bg, "size", w.size))
         self._path_in = TextInput(
             hint_text="Full path to .gguf file...",
             multiline=False, size_hint=(1, 1), font_size=sp(13),
-            foreground_color=(1, 1, 1, 1),
-            hint_text_color=(0.60, 0.60, 0.63, 1),
-            background_color=(0.231, 0.231, 0.231, 1),
-            cursor_color=(1, 1, 1, 1),
+            foreground_color=MD3Colors.ON_SURFACE,
+            hint_text_color=MD3Colors.ON_SURFACE_VARIANT,
+            background_color=MD3Colors.SURFACE,
+            cursor_color=MD3Colors.ON_SURFACE,
         )
         load_btn = Button(
             text="Load", size_hint=(None, 1), width=dp(64),
             font_size=sp(13), background_normal="",
-            background_color=(0.098, 0.761, 0.490, 1),
+            background_color=MD3Colors.SUCCESS,
         )
         load_btn.bind(on_release=lambda *_: self._load_model(
             self._path_in.text.strip(), self._on_manual_load_done
@@ -332,7 +342,7 @@ class SettingsScreen(Screen):
 
         self._status = Label(
             text="", size_hint=(1, None), height=dp(26),
-            font_size=sp(11), color=(0.5, 0.9, 0.5, 1),
+            font_size=sp(11), color=MD3Colors.SUCCESS,
         )
         root.add_widget(self._status)
         self.add_widget(root)
@@ -343,11 +353,11 @@ class SettingsScreen(Screen):
         from rag.llm import llm
         if llm.is_loaded():
             name = Path(llm._model_path or "").name
-            self._model_lbl.text  = f"Loaded: {name}"
-            self._model_lbl.color = (0.4, 0.9, 0.4, 1)
+            self._model_lbl.text  = f"✅ Loaded: {name}"
+            self._model_lbl.color = MD3Colors.SUCCESS
         else:
-            self._model_lbl.text  = "No model loaded."
-            self._model_lbl.color = (0.9, 0.6, 0.3, 1)
+            self._model_lbl.text  = "⚠ No model loaded."
+            self._model_lbl.color = MD3Colors.WARNING
 
     def _load_model(self, path: str, callback=None):
         if not path:
@@ -358,7 +368,7 @@ class SettingsScreen(Screen):
 
     @mainthread
     def _on_manual_load_done(self, success: bool, msg: str):
-        color = (0.4, 0.9, 0.4, 1) if success else (0.9, 0.3, 0.3, 1)
+        color = MD3Colors.SUCCESS if success else MD3Colors.ERROR
         self._set_status(msg, color)
         self._update_model_status()
         for row in self._rows:
@@ -368,7 +378,7 @@ class SettingsScreen(Screen):
         from rag.llm import llm
         llm.unload()
         self._update_model_status()
-        self._set_status("Model unloaded.", (0.9, 0.6, 0.3, 1))
+        self._set_status("Model unloaded.", MD3Colors.WARNING)
         for row in self._rows:
             row.refresh_state()
 
@@ -390,7 +400,7 @@ class SettingsScreen(Screen):
     def _on_auto_done(self, success: bool, message: str):
         """Collapse the banner and refresh all rows."""
         self._dl_banner.height = 0
-        color = (0.4, 0.9, 0.4, 1) if success else (0.9, 0.3, 0.3, 1)
+        color = MD3Colors.SUCCESS if success else MD3Colors.ERROR
         self._set_status(message, color)
         self._update_model_status()
         for row in self._rows:

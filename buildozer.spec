@@ -5,10 +5,10 @@ package.name   = orag
 package.domain = com.yourname
 
 source.dir    = .
-source.include_exts = py,png,jpg,kv,atlas,db
+source.include_exts = py,png,jpg,kv,atlas,db,gguf
 # Include the pre-built ARM64 llama-server binary (no extension)
 source.include_patterns = llama-server-arm64
-source.exclude_dirs = __pycache__,.git,.venv,venv,.mypy_cache,quantization,bin,p4a-recipes,llama_cpp_src,build_log_dl,build_log_dl2,llamacpp_bin,quantize
+source.exclude_dirs = __pycache__,.git,.venv,venv,.mypy_cache,quantization,bin,p4a-recipes,llama_cpp_src,build_log_dl,build_log_dl2,llamacpp_bin,quantize,evaluation,compressed,.github
 
 version = 1.0.0
 
@@ -65,8 +65,13 @@ android.sdk         = 34
 android.archs       = arm64-v8a
 android.allow_backup = False
 
-# Extra Java options for model loading
-android.add_jvm_options = -Xmx768m
+# Extra Java options for 4GB device optimization
+# -Xmx512m: Reduced heap for 4GB devices (saves ~256MB vs default)
+# -XX:+UseG1GC: G1 garbage collector (better for mobile)
+# -XX:MaxGCPauseMillis=100: Shorter GC pauses for responsiveness
+# -XX:+UnlockExperimentalVMOptions: Enable experimental optimizations
+# -XX:G1NewCollectionPercentThreshold=30: Tune young gen collection
+android.add_jvm_options = -Xmx512m,-XX:+UseG1GC,-XX:MaxGCPauseMillis=100
 
 # App icon
 icon.filename      = %(source.dir)s/assets/app_icon.png

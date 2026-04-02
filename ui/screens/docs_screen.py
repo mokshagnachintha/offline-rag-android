@@ -16,16 +16,18 @@ from kivy.metrics import dp, sp
 from kivy.uix.widget import Widget
 from kivy.graphics import Color, RoundedRectangle
 
-# ── Palette (must match chat_screen / main) ──────────────────────── #
-_BG        = (0.129, 0.129, 0.129, 1)
-_HEADER_BG = (0.102, 0.102, 0.102, 1)
-_CARD_BG   = (0.184, 0.184, 0.184, 1)
-_INPUT_BG  = (0.231, 0.231, 0.231, 1)
-_GREEN     = (0.098, 0.761, 0.490, 1)
-_RED       = (0.75,  0.15,  0.15,  1)
-_WHITE     = (1, 1, 1, 1)
-_MUTED     = (0.60, 0.60, 0.63, 1)
-_DIVIDER   = (0.22, 0.22, 0.22, 1)
+# ── Material Design 3 Theme ──────────────────────────────────────── #
+from ui.theme import MD3Colors, MD3Spacing, MD3Radius, MD3Typography, paint_widget, MD3Button
+
+_BG        = MD3Colors.BG_PRIMARY
+_HEADER_BG = MD3Colors.BG_SECONDARY
+_CARD_BG   = MD3Colors.SURFACE_VARIANT
+_INPUT_BG  = MD3Colors.SURFACE
+_GREEN     = MD3Colors.SUCCESS
+_RED       = MD3Colors.ERROR
+_WHITE     = MD3Colors.ON_SURFACE
+_MUTED     = MD3Colors.ON_SURFACE_VARIANT
+_DIVIDER   = MD3Colors.OUTLINE_VARIANT
 
 
 def _paint(widget, color, radius=0):
@@ -91,10 +93,13 @@ class DocsScreen(Screen):
         _paint(root, _BG)
 
         # ── header ───────────────────────────────────────────────── #
-        header = BoxLayout(size_hint=(1, None), height=dp(54))
+        header = BoxLayout(
+            size_hint=(1, None), height=dp(54),
+            padding=[MD3Spacing.MD, 0],
+        )
         _paint(header, _HEADER_BG)
         header.add_widget(Label(
-            text="[b]Documents[/b]", markup=True,
+            text="[b]📄 Documents[/b]", markup=True,
             color=_WHITE, font_size=sp(16),
             halign="center", valign="middle",
         ))
@@ -109,8 +114,8 @@ class DocsScreen(Screen):
         self._list = BoxLayout(
             orientation="vertical",
             size_hint=(1, None),
-            spacing=dp(6),
-            padding=[dp(10), dp(10)],
+            spacing=MD3Spacing.MD,
+            padding=[MD3Spacing.MD, MD3Spacing.MD],
         )
         self._list.bind(minimum_height=self._list.setter("height"))
         self._scroll.add_widget(self._list)
@@ -127,13 +132,16 @@ class DocsScreen(Screen):
         bar = BoxLayout(
             size_hint=(1, None), height=dp(72),
             orientation="vertical",
-            padding=[dp(10), dp(6)],
-            spacing=dp(4),
+            padding=[MD3Spacing.MD, MD3Spacing.SM],
+            spacing=MD3Spacing.SM,
         )
         _paint(bar, _HEADER_BG)
 
         # Row 1 — Browse button (primary; uses native Android picker)
-        browse_row = BoxLayout(size_hint=(1, None), height=dp(44), spacing=dp(8))
+        browse_row = BoxLayout(
+            size_hint=(1, None), height=dp(44),
+            spacing=MD3Spacing.MD,
+        )
 
         browse_btn = Button(
             text             = "＋  Browse Files (PDF / TXT)",
@@ -144,7 +152,7 @@ class DocsScreen(Screen):
             background_color = _GREEN,
             color            = _WHITE,
         )
-        _paint(browse_btn, _GREEN, radius=10)
+        _paint(browse_btn, _GREEN, radius=MD3Radius.LARGE)
         browse_btn.bind(on_release=self._on_browse)
         browse_row.add_widget(browse_btn)
         bar.add_widget(browse_row)
@@ -154,7 +162,8 @@ class DocsScreen(Screen):
         # ── manual path row (collapsed by default, shown as fallback) #
         manual_row = BoxLayout(
             size_hint=(1, None), height=dp(48),
-            spacing=dp(8), padding=[dp(10), dp(4)],
+            spacing=MD3Spacing.MD,
+            padding=[MD3Spacing.MD, MD3Spacing.SM],
         )
         _paint(manual_row, _BG)
         self._path_input = TextInput(
@@ -172,6 +181,7 @@ class DocsScreen(Screen):
             font_size=sp(13), background_normal="",
             background_color=_GREEN,
         )
+        _paint(add_btn, _GREEN, radius=MD3Radius.MEDIUM)
         add_btn.bind(on_release=self._on_add_manual)
         manual_row.add_widget(self._path_input)
         manual_row.add_widget(add_btn)

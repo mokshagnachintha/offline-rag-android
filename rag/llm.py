@@ -761,6 +761,86 @@ def _strip_thinking(text: str) -> str:
     return text.strip()
 
 
+# ------------------------------------------------------------------ #
+#  Multimodal helpers                                                  #
+# ------------------------------------------------------------------ #
+
+def encode_image_to_base64(image_data: bytes) -> str:
+    """Encode binary image data to base64 string for embedding in responses."""
+    import base64
+    return base64.b64encode(image_data).decode('utf-8')
+
+
+def format_image_markdown(image_data: bytes, caption: str = "Image") -> str:
+    """
+    Format image data as markdown for display.
+    Returns either base64-embedded data URI or placeholder text.
+    
+    For mobile/embedded contexts, uses base64 data URIs when practical.
+    For large images, falls back to text placeholder.
+    
+    Args:
+        image_data: Binary JPEG image bytes
+        caption: Text caption for the image
+    
+    Returns:
+        Markdown string (data URI or text placeholder)
+    """
+    # Only inline small images (< 50KB) to avoid bloating responses
+    if len(image_data) > 50 * 1024:
+        return f"[{caption} - Image too large to embed]"
+    
+    try:
+        b64 = encode_image_to_base64(image_data)
+        # Return markdown with embedded base64 data URI
+        return f"![{caption}](data:image/jpeg;base64,{b64})"
+    except Exception:
+        return f"[{caption} - Image encoding error]"
+
+
+def format_multimodal_response(
+    text_response: str,
+    images: list[dict] | None = None,
+    include_image_data: bool = False,
+) -> str:
+    """
+    Format a multimodal response with text and images.
+    
+    Args:
+        text_response: Generated text response from LLM
+        images: List of image dicts (from retriever.retrieve_images)
+        include_image_data: If True, embed image data in markdown
+                           If False, include only captions
+    
+    Returns:
+        Formatted response text with image references/data
+    """
+    if not images:
+        return text_response
+    
+    # Append image references to response
+    response_parts = [text_response]
+    
+    if include_image_data:
+        # Embed actual image data
+        response_parts.append("\n\n**Relevant Images:**\n")
+        for img in images[:3]:  # Limit to top 3 images
+            caption = img.get("caption", "Image")
+            img_data = img.get("data")
+            if img_data:
+                img_md = format_image_markdown(img_data, caption)
+                response_parts.append(f"{img_md}  ")
+    else:
+        # Include only captions (lower bandwidth)
+        captions = [img.get("caption", "Image") for img in images[:3]]
+        if captions:
+            response_parts.append("\n\n**Images shown:**\n")
+            for caption in captions:
+                response_parts.append(f"- {caption}\n")
+    
+    return "".join(response_parts)
+
+
 class _ThinkingStreamFilter:
     """
     Wraps a stream_cb so that tokens inside <think>…</think> blocks are
@@ -835,6 +915,49 @@ def build_rag_prompt(context_chunks: list[str], question: str) -> str:
         f"<|im_start|>system\n{system_msg}<|im_end|>\n"
         f"<|im_start|>user\n"
         f"Context:\n{ctx_text}\n\nQuestion: {question}<|im_end|>\n"
+        f"<|im_start|>assistant\n"
+    )
+
+
+def build_multimodal_rag_prompt(
+    context_chunks: list[str],
+    question: str,
+    image_captions: list[str] | None = None,
+) -> str:
+    """
+    Build a multimodal RAG prompt with text and image context.
+    
+    Args:
+        context_chunks: List of text chunks
+        question: User query
+        image_captions: List of image captions/descriptions
+    
+    Returns:
+        ChatML formatted prompt with image annotations
+    """
+    capped = [c[:800] for c in context_chunks]
+    ctx_text = "\n\n---\n\n".join(capped)
+    
+    # Add image context if available
+    image_context = ""
+    if image_captions:
+        image_list = "\n".join(f"  - {caption}" for caption in image_captions[:3])
+        image_context = f"\n\nRelevant images found:\n{image_list}\n"
+    
+    system_msg = (
+        "You are a helpful multimodal assistant. "
+        "Answer ONLY based on the provided context and images. "
+        "When relevant images are available, reference them in your answer "
+        "(e.g., 'As shown in the diagram…' or 'The figure demonstrates…'). "
+        "Write at least 2-3 sentences — never give a one-word answer. "
+        "Do NOT just repeat the question. "
+        "If the answer is not in the context, say \"I don't know.\". "
+        "Reply with only your final answer — no reasoning steps."
+    )
+    return (
+        f"<|im_start|>system\n{system_msg}<|im_end|>\n"
+        f"<|im_start|>user\n"
+        f"Context:\n{ctx_text}{image_context}\n\nQuestion: {question}<|im_end|>\n"
         f"<|im_start|>assistant\n"
     )
 

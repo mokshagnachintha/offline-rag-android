@@ -2,9 +2,12 @@
 chunker.py — Load .txt and .pdf files, split into overlapping chunks,
 and compute per-chunk TF-IDF vectors (stored for hybrid retrieval).
 No heavy NLP libraries — pure Python + PyMuPDF.
+
+Also supports image extraction from PDFs for multimodal retrieval.
 """
 import re
 import math
+import io
 from pathlib import Path
 from typing import List, Dict, Tuple
 from collections import Counter
@@ -22,6 +25,13 @@ except ImportError:
     except ImportError:
         PDF_SUPPORT  = False
         _PDF_BACKEND = None
+
+# ---- optional image processing for compression ----
+try:
+    from PIL import Image  # Pillow
+    PIL_SUPPORT = True
+except ImportError:
+    PIL_SUPPORT = False
 
 
 # ------------------------------------------------------------------ #
@@ -217,26 +227,150 @@ def compute_tfidf_vecs(
 
 
 # ------------------------------------------------------------------ #
+#  Image extraction & compression                                     #
+# ------------------------------------------------------------------ #
+
+def _compress_image_data(image_data: bytes, quality: int = 70) -> bytes:
+    """Compress JPEG image data for mobile storage efficiency."""
+    if not PIL_SUPPORT:
+        # If PIL not available, return original (already JPEG likely)
+        return image_data
+    try:
+        img = Image.open(io.BytesIO(image_data))
+        # Convert to RGB if needed (remove alpha channel)
+        if img.mode in ("RGBA", "LA", "P"):
+            img = img.convert("RGB")
+        # Compress and save to bytes
+        out_buffer = io.BytesIO()
+        img.save(out_buffer, format="JPEG", quality=quality, optimize=True)
+        return out_buffer.getvalue()
+    except Exception:
+        # Fallback: return original if compression fails
+        return image_data
+
+
+def _extract_images_from_pdf_pymupdf(path: str) -> List[dict]:
+    """Extract images from PDF using PyMuPDF (fitz)."""
+    images = []
+    try:
+        doc = fitz.open(path)
+        for page_idx, page in enumerate(doc):
+            # Extract images on page
+            image_list = page.get_images()
+            for img_idx, img_ref in enumerate(image_list):
+                try:
+                    xref = img_ref[0]
+                    pix = fitz.Pixmap(doc, xref)
+                    
+                    # Convert to RGB if needed
+                    if pix.n - pix.alpha < 4:
+                        pix_rgb = pix
+                    else:
+                        pix_rgb = fitz.Pixmap(fitz.csRGB, pix)
+                    
+                    # Save as JPEG
+                    img_data = pix_rgb.tobytes("jpg")
+                    img_data = _compress_image_data(img_data)
+                    
+                    # Get image rect for bounding box
+                    rect = page.get_image_rects(img_ref)
+                    bbox = {"x": rect[0].x0, "y": rect[0].y0, 
+                            "width": rect[0].x1 - rect[0].x0, 
+                            "height": rect[0].y1 - rect[0].y0} if rect else {}
+                    
+                    images.append({
+                        "image_idx": len(images),
+                        "data": img_data,
+                        "caption": f"Image on page {page_idx + 1}",
+                        "page": page_idx + 1,
+                        "bbox": bbox,
+                        "ocr_text": "",  # OCR would require additional library
+                    })
+                except Exception:
+                    continue
+        doc.close()
+    except Exception:
+        pass
+    return images
+
+
+def _extract_images_from_pdf_pypdf(path: str) -> List[dict]:
+    """Extract images from PDF using pypdf (pure Python fallback)."""
+    images = []
+    try:
+        reader = _pypdf.PdfReader(path)
+        for page_idx, page in enumerate(reader.pages):
+            if "/XObject" in page["/Resources"]:
+                x_object = page["/Resources"]["/XObject"].get_object()
+                for obj_name in x_object:
+                    obj = x_object[obj_name].get_object()
+                    if obj["/Subtype"] == "/Image":
+                        try:
+                            if "/FlateDecode" in obj["/Filter"]:
+                                data = obj.get_data()
+                            else:
+                                data = obj.get_data()
+                            
+                            # Try to save as JPEG
+                            if "/DCTDecode" in obj.get("/Filter", []):
+                                # Already JPEG
+                                img_data = _compress_image_data(data)
+                            else:
+                                # Raw pixel data - harder to handle without PIL
+                                # Skip for pypdf since image extraction is complex
+                                continue
+                            
+                            images.append({
+                                "image_idx": len(images),
+                                "data": img_data,
+                                "caption": f"Image on page {page_idx + 1}",
+                                "page": page_idx + 1,
+                                "bbox": {},
+                                "ocr_text": "",
+                            })
+                        except Exception:
+                            continue
+    except Exception:
+        pass
+    return images
+
+
+def extract_images_from_pdf(path: str) -> List[dict]:
+    """
+    Extract all images from PDF and return metadata.
+    Returns list of image dicts with: image_idx, data, caption, page, bbox, ocr_text.
+    """
+    if not PDF_SUPPORT:
+        return []
+    
+    if _PDF_BACKEND == "pymupdf":
+        return _extract_images_from_pdf_pymupdf(path)
+    else:
+        return _extract_images_from_pdf_pypdf(path)
+
+
+# ------------------------------------------------------------------ #
 #  Public API                                                          #
 # ------------------------------------------------------------------ #
 
-def process_document(path: str) -> List[dict]:
+def process_document(path: str) -> Tuple[List[dict], List[dict]]:
     """
-    Full pipeline: extract → chunk → tokenise → TF-IDF.
+    Full pipeline: extract → chunk → tokenise → TF-IDF, plus image extraction.
 
-    Returns list of chunk dicts:
-        {chunk_idx, text, tokens, tfidf_vec}
+    Returns (chunks, images) tuple:
+        chunks: list of {chunk_idx, text, tokens, tfidf_vec}
+        images: list of {image_idx, data, caption, page, bbox, ocr_text}
     """
     raw_text   = extract_text(path)
     raw_chunks = chunk_text(raw_text)
     token_lists = [tokenise(c) for c in raw_chunks]
     tfidf_vecs, _ = compute_tfidf_vecs(token_lists)
 
-    result = []
+    chunks = []
     for idx, (text, tokens, vec) in enumerate(
         zip(raw_chunks, token_lists, tfidf_vecs)
     ):
-        result.append(
+        chunks.append(
             {
                 "chunk_idx": idx,
                 "text": text,
@@ -244,4 +378,11 @@ def process_document(path: str) -> List[dict]:
                 "tfidf_vec": vec,
             }
         )
-    return result
+    
+    # Extract images if PDF
+    ext = Path(path).suffix.lower()
+    images = []
+    if ext == ".pdf":
+        images = extract_images_from_pdf(path)
+    
+    return chunks, images

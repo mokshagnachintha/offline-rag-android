@@ -15,6 +15,7 @@ from .db       import insert_chunks
 from .retriever import HybridRetriever
 from .llm      import llm, build_rag_prompt, build_direct_prompt, list_available_models
 from .downloader import auto_download_default, model_dest_path, QWEN_MODEL, NOMIC_MODEL
+from .memory_manager import get_memory_manager, MemoryAwareRetriever
 
 
 # Module-level retriever (shared across the whole app)
@@ -224,8 +225,8 @@ def ask(
     on_done: Optional[Callable[[bool, str], None]] = None,
 ) -> None:
     """
-    Run a RAG query in a background thread.
-    Retrieves top-2 chunks (sized to fit ctx=768 budget).
+    Run a RAG query in a background thread with memory optimization.
+    Automatically adjusts retrieval count based on device memory pressure.
     stream_cb: called with each new LLM token (for streaming UI)
     on_done  : called with (success, full_answer_or_error)
     """
@@ -241,7 +242,12 @@ def ask(
                     on_done(False, "No LLM model loaded. Please load a GGUF model first.")
                 return
 
-            results = retriever.query(question, top_k=2)
+            # Get memory-optimized retrieval limit
+            memory_mgr = get_memory_manager()
+            optimized_k = memory_mgr.get_max_retrieval_chunks()
+            
+            # Retrieve with memory optimization
+            results = retriever.query(question, top_k=optimized_k)
             if not results:
                 if on_done:
                     on_done(False, "No relevant context found.")
