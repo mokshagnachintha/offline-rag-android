@@ -54,12 +54,20 @@ jobs:
 
       - name: Accept Android SDK licenses
         run: |
-          echo "Preparing to accept Android SDK licenses..."
+          echo "Pre-accepting Android SDK licenses..."
           mkdir -p ~/.android
-          # Accept all Android SDK licenses automatically
-          yes | $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --licenses 2>/dev/null || {
-            echo "Note: License acceptance attempted (may not be initialized yet)"
-          }
+          mkdir -p ~/.android/licenses
+          
+          # Accept licenses by creating the license files directly with their hashes
+          # This is more reliable than trying to pipe input to sdkmanager
+          echo "d56f5187479451eabf01fb78af6dfcb131b33910" > ~/.android/licenses/android-sdk-license
+          echo "504667f4c0de7973335447fc6c3b3d07e678066c" > ~/.android/licenses/android-sdk-preview-license
+          echo "129e256904b56848df64501b5ed41250192f32e6" > ~/.android/licenses/google-gdk-license
+          echo "dfaf6d33d4f163b9e23e234d547c6a31ec42d632" > ~/.android/licenses/mips-android-system-image-license
+          echo "887daf51f8dce29c925d26ce98a02dd0b7f92d22" > ~/.android/licenses/intel-android-system-image-license
+          echo "79bb43eaa2624fc1708a847bd1d61d0f5c2d8d3c" > ~/.android/licenses/arm-linux-androideabi-ndk-license
+          
+          echo "License files created successfully"
 
       - name: Build APK
         run: |
@@ -71,10 +79,6 @@ jobs:
           echo "Python version: $(python --version)"
           echo "Buildozer version: $(buildozer --version)"
           echo ""
-          
-          # Try to accept licenses one more time before build  
-          mkdir -p ~/.android
-          yes | $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --licenses 2>/dev/null || true
           
           buildozer android release -v 2>&1 | tee build.log
           BUILD_EXIT_CODE=$?
