@@ -209,11 +209,23 @@ class HybridRetriever:
 
     # --- public query ---
 
-    def query(self, text: str, top_k: int = 4) -> List[Tuple[str, float]]:
+    def query(self, text: str, top_k: int = 4, 
+              retrieval_weights: dict = None) -> List[Tuple[str, float]]:
         """
         Returns list of (chunk_text, score) sorted by relevance, top_k results.
         Uses semantic embeddings when available (best quality), otherwise
         falls back to pure BM25 + TF-IDF hybrid.
+        
+        Args:
+            text: Query string
+            top_k: Number of top results to return
+            retrieval_weights: Optional dict with keys 'bm25', 'tfidf', 'semantic'
+                             and float values in [0, 1]. If provided, overrides
+                             default weights. Example:
+                             {'bm25': 1.0, 'tfidf': 0.0, 'semantic': 0.0}
+                             for pure BM25, or 
+                             {'bm25': 0.3, 'tfidf': 0.2, 'semantic': 0.5}
+                             for semantic-heavy hybrid.
         """
         if self.is_empty():
             return []
@@ -229,17 +241,36 @@ class HybridRetriever:
         bm25_n = _normalise_scores(bm25)
         cos_n  = _normalise_scores(cos)
 
+        # Determine weights to use
+        if retrieval_weights is not None:
+            w_bm25 = retrieval_weights.get('bm25', 0.0)
+            w_tfidf = retrieval_weights.get('tfidf', 0.0)
+            w_semantic = retrieval_weights.get('semantic', 0.0)
+        else:
+            # Default weights: 30 BM25 + 20 TF-IDF + 50 semantic
+            w_bm25 = 0.30
+            w_tfidf = 0.20
+            w_semantic = 0.50
+
         if sem is not None:
             sem_n = _normalise_scores(sem)
-            # Semantic-weighted blend: 30 BM25 + 20 TF-IDF + 50 semantic
+            # Use specified or default weights
             combined = [
-                (i, 0.30 * b + 0.20 * c + 0.50 * s)
+                (i, w_bm25 * b + w_tfidf * c + w_semantic * s)
                 for i, (b, c, s) in enumerate(zip(bm25_n, cos_n, sem_n))
             ]
         else:
-            # Fallback: classic BM25 + TF-IDF hybrid
+            # Fallback: classic BM25 + TF-IDF hybrid (normalize weights)
+            total = w_bm25 + w_tfidf
+            if total > 0:
+                w_bm25_norm = w_bm25 / total
+                w_tfidf_norm = w_tfidf / total
+            else:
+                w_bm25_norm = self.alpha
+                w_tfidf_norm = 1 - self.alpha
+            
             combined = [
-                (i, self.alpha * b + (1 - self.alpha) * c)
+                (i, w_bm25_norm * b + w_tfidf_norm * c)
                 for i, (b, c) in enumerate(zip(bm25_n, cos_n))
             ]
 

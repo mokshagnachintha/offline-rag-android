@@ -1,0 +1,52 @@
+[
+  {
+    "query": "What is crop rotation and what are its agronomic benefits?",
+    "gold_keywords": ["crop rotation", "soil fertility", "pest management", "nitrogen fixation", "disease prevention"],
+    "expected_answer": "Crop rotation alternates crops on same land. Benefits: restores soil nutrients, reduces pest/disease buildup, improves soil structure, reduces chemical dependency."
+  },
+  {
+    "query": "Explain the role of fertilizers in plant nutrition",
+    "gold_keywords": ["fertilizer", "NPK", "nitrogen", "phosphorus", "potassium", "macro-nutrients"],
+    "expected_answer": "Fertilizers supply essential nutrients. NPK are primary macronutrients; nitrogen for growth, phosphorus for roots, potassium for strength and disease resistance."
+  },
+  {
+    "query": "What are effective irrigation methods and water management strategies?",
+    "gold_keywords": ["irrigation", "drip irrigation", "water efficiency", "soil moisture", "drought resistant"],
+    "expected_answer": "Methods include drip irrigation, sprinklers, and flood irrigation. Drip is most efficient. Water management includes soil moisture monitoring and efficient scheduling."
+  },
+  {
+    "query": "How do integrated pest management strategies reduce crop damage?",
+    "gold_keywords": ["integrated pest management", "IPM", "biological control", "chemical pesticides", "monitoring"],
+    "expected_answer": "IPM combines monitoring, biological controls, cultural practices, and selective chemicals. Reduces pesticide use while maintaining crop yields."
+  },
+  {
+    "query": "What is precision agriculture and its technological applications?",
+    "gold_keywords": ["precision agriculture", "GPS", "sensor technology", "data analytics", "variable rate"],
+    "expected_answer": "Precision agriculture uses GPS, sensors, drones, and analytics to optimize inputs. Enables variable rate application based on field variability."
+  },
+  {
+    "query": "Explain soil erosion and effective conservation practices",
+    "gold_keywords": ["soil erosion", "conservation", "contour plowing", "terraces", "cover crops"],
+    "expected_answer": "Erosion reduces soil quality. Conservation includes contour plowing, terraces, cover crops, windbreaks, and reduced tillage to protect soil."
+  },
+  {
+    "query": "What are the principles and benefits of organic farming?",
+    "gold_keywords": ["organic farming", "sustainable", "chemical-free", "crop rotation", "natural pest control"],
+    "expected_answer": "Organic farming avoids synthetic chemicals, relies on crop rotation, composting, natural pest control. Benefits include soil health and food safety."
+  },
+  {
+    "query": "How do environmental factors affect plant growth and development?",
+    "gold_keywords": ["plant growth", "temperature", "light", "moisture", "pH", "nutrients"],
+    "expected_answer": "Plant growth depends on temperature, light intensity, water availability, soil pH, and nutrient levels. Optimization requires balancing all factors."
+  },
+  {
+    "query": "What causes crop diseases and how are they managed?",
+    "gold_keywords": ["crop disease", "fungal", "bacterial", "viral", "disease resistance", "sanitation"],
+    "expected_answer": "Diseases caused by fungi, bacteria, or viruses. Management: resistant varieties, crop rotation, sanitation, fungicides, and early detection."
+  },
+  {
+    "query": "How do climate conditions affect crop selection and yields?",
+    "gold_keywords": ["climate", "yield", "rainfall", "temperature", "growing season", "adaptation"],
+    "expected_answer": "Crop selection depends on climate zone, water availability, and growing season. Climate affects timing, pest pressure, and overall yield potential."
+  }
+]

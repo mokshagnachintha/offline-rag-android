@@ -1,0 +1,49 @@
+[
+  {
+    "query": "what is the capital of france",
+    "gold_keywords": [
+      "capital",
+      "france",
+      "Paris"
+    ],
+    "source": "nq_subset"
+  },
+  {
+    "query": "when was the united nations founded",
+    "gold_keywords": [
+      "United Nations",
+      "founded",
+      "1945"
+    ],
+    "source": "nq_subset"
+  },
+  {
+    "query": "what is photosynthesis",
+    "gold_keywords": [
+      "photosynthesis",
+      "plants",
+      "light",
+      "chlorophyll"
+    ],
+    "source": "nq_subset"
+  },
+  {
+    "query": "how many countries are in the world",
+    "gold_keywords": [
+      "countries",
+      "world",
+      "nations"
+    ],
+    "source": "nq_subset"
+  },
+  {
+    "query": "what is the largest planet in our solar system",
+    "gold_keywords": [
+      "Jupiter",
+      "planet",
+      "solar system",
+      "largest"
+    ],
+    "source": "nq_subset"
+  }
+]

@@ -1,0 +1,73 @@
+
+EDUCATIONAL SCIENCE FUNDAMENTALS
+
+Photosynthesis Process
+Photosynthesis is the fundamental process by which plants convert light energy into chemical energy stored in glucose. Light-dependent 
+reactions occur in thylakoids where chlorophyll captures photons. This produces ATP and NADPH through electron transport chains. 
+Light-independent reactions (Calvin cycle) in the stroma use ATP and NADPH to reduce CO2 to glucose. The overall equation: 
+6CO2 + 6H2O + light → C6H12O6 + 6O2. Photosynthesis is the basis of most food chains.
+
+Mitochondrial Structure and Functions
+Mitochondria are double-membrane organelles responsible for cellular energy production. The outer membrane is permeable. The inner 
+membrane contains cristae with special folds. The matrix inside contains enzymes. ATP production occurs through oxidative 
+phosphorylation. The electron transport chain pumps protons creating a gradient. Chemiosmosis uses this gradient to phosphorylate ADP 
+to ATP. One glucose produces approximately 30-32 ATP molecules.
+
+Central Dogma of Molecular Biology
+The central dogma describes information flow in biological systems: DNA → RNA → Protein. Transcription converts DNA to messenger RNA 
+(mRNA) in the nucleus. This mRNA is processed and transported to ribosomes. Translation uses mRNA to synthesize proteins according to 
+genetic code. Each three nucleotide codon specifies an amino acid. The genetic code is nearly universal across organisms. Some viruses 
+exhibit reverse transcription (RNA → DNA).
+
+Evolutionary Theory
+Evolution by natural selection explains biological diversity. Genetic variation provides differences in populations. Traits benefiting 
+survival are selected for in environments. Differential reproduction passes beneficial traits to offspring. Adaptation increases fitness. 
+Speciation occurs when populations diverge irreversibly. Fossil records document evolutionary changes. DNA analysis confirms species 
+relationships.
+
+Earth's Structure and Plate Tectonics
+Earth comprises a thin crust, thick mantle, and iron core. Crust density varies: oceanic crust is denser than continental. The mantle 
+moves through convection currents. Lithospheric plates move due to mantle convection. Plate boundaries show convergent, divergent, and 
+transform motion. Subduction zones show plates colliding and sinking. Plate tectonics explains mountain formation, earthquakes, and 
+volcanism. Continental drift has been occurring for billions of years.
+
+Circulatory System Structure
+The circulatory system transports oxygen, nutrients, and waste throughout the body. The heart pumps blood with four chambers. Arteries 
+carry blood away from the heart under high pressure. Veins return blood at low pressure. Capillaries exchange materials with tissues 
+through small diameter. Red blood cells carry oxygen via hemoglobin. White blood cells fight infection. Platelets enable clotting. 
+Blood regulates body temperature.
+
+Greenhouse Effect and Climate Change
+The greenhouse effect occurs when gases trap thermal radiation in the atmosphere. Carbon dioxide, methane, and nitrous oxide are primary 
+greenhouse gases. These gases absorb infrared radiation that would otherwise escape to space. Increased atmospheric CO2 from fossil fuels 
+intensifies the effect. This traps heat, raising average global temperatures. Temperature increases affect weather patterns, sea levels, 
+and ecosystems. Climate feedback mechanisms amplify warming.
+
+Meiosis and Sexual Reproduction
+Meiosis produces haploid gametes (sperm and eggs) from diploid cells. Prophase I includes homologous chromosome pairing and crossing 
+over producing genetic recombination. Metaphase I aligns homologous pairs at the metaphase plate. Anaphase I separates homologous chromosomes. 
+Meiosis II resembles mitosis, separating sister chromatids. Final result is four haploid cells. Fertilization restores diploid number. 
+Crossing over and independent assortment create genetic variation.
+
+Prokaryotic and Eukaryotic Cells
+Prokaryotes include bacteria and archaea lacking nuclei and membrane-bound organelles. Eukaryotes include animals, plants, and fungi 
+with nuclei and organelles. Eukaryotic cells are 10-100 micrometers; prokaryotes are 1-10 micrometers. Eukaryotes have linear chromosomes 
+within the nucleus. Prokaryotes have circular DNA in the nucleoid. Cell division: prokaryotes use binary fission; eukaryotes use mitosis. 
+Ribosomes are smaller in prokaryotes.
+
+Water Cycle
+The water cycle describes continuous water movement between Earth's surface and atmosphere. Evaporation converts surface water to vapor. 
+Transpiration releases water from plants. Condensation converts vapor to clouds. Precipitation (rain, snow) falls on land and oceans. 
+Runoff flows to rivers and oceans. Infiltration allows groundwater recharge. The cycle distributes fresh water globally. Evaporation 
+requires latent heat. The cycle regulates climate and weather patterns.
+
+Cellular Respiration
+Cellular respiration releases energy from organic molecules. Glycolysis breaks glucose into pyruvate in the cytoplasm producing 2 ATP 
+and 2 NADH. The Krebs cycle oxidizes acetyl-CoA in the mitochondria producing CO2, ATP, NADH, and FADH2. Electron transport chain uses 
+NADH and FADH2 to generate approximately 30 ATP per glucose. Aerobic respiration requires oxygen. Anaerobic respiration produces lactate.
+
+Photosynthetic Light Reactions
+Light reactions occur in thylakoid membranes and are light-dependent. Photosystem II absorbs photons and splits water molecules. Electrons 
+are excited and transferred through an electron transport chain. Photosystem I raises electrons to higher energy. Electrons reduce NADP+ 
+to NADPH. Proton gradient drives ATP synthesis by ATP synthase. Z-scheme describes electron flow. Light reactions output ATP and NADPH 
+used in the Calvin cycle.

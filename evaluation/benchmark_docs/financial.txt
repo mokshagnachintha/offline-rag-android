@@ -1,0 +1,67 @@
+
+FINANCIAL ACCOUNTING AND REPORTING
+
+Revenue Recognition Standards
+IFRS 15 establishes revenue recognition principles applicable worldwide. Revenue must be recognized when control of goods or 
+services transfers to customers. Revenue recognition requires identifying the contract, performance obligations, transaction 
+price, and allocating consideration to performance obligations. Five-step model ensures consistency.
+
+Balance Sheet Components
+The balance sheet presents financial position at a specific date. Assets equal liabilities plus equity. Assets represent resources 
+controlled by the company. Liabilities represent obligations. Equity represents owner interest. Current assets convert to cash 
+within one year. Fixed assets have longer lives. The balance sheet uses historical cost accounting.
+
+Depreciation Accounting
+Depreciation allocates the cost of fixed assets over their useful lives. Straight-line depreciation allocates equal amounts annually. 
+Declining-balance depreciation allocates larger amounts early. Useful life estimates affect annual expenses. Depreciation reduces 
+asset values and creates non-cash expenses. Residual values affect calculations.
+
+Cash Flow Statement Analysis
+The cash flow statement shows actual cash movements during a period. Operating activities show cash from normal operations. Investing 
+activities show capital expenditures and asset sales. Financing activities show debt and equity changes. Statement uses direct or 
+indirect method. Differs from income statement through accrual versus cash accounting. Essential for cash management.
+
+Deferred Tax Account Treatment
+Deferred tax assets and liabilities arise from temporary differences between book and tax accounting. Deferred tax assets reduce 
+future tax payments. Deferred tax liabilities increase future tax liability. Valuation allowances reflect realization uncertainty. 
+Temporary differences reverse in future years. Permanent differences never reverse.
+
+Accounts Receivable Management
+Allowance for doubtful accounts estimates uncollectible receivables. Reduces net accounts receivable on balance sheet. Creates bad 
+debt expense on income statement. Estimation methods include percentage of sales or aging analysis. Write-offs reduce allowance. 
+Over- and under-estimations require adjustments.
+
+Working Capital Essentials
+Working capital equals current assets minus current liabilities. Essential for funding day-to-day operations. Positive working capital 
+indicates operational efficiency. Working capital cycle measures receivables and payables timing. Affects cash flow. Seasonal businesses 
+experience working capital fluctuations. Management improves profitability.
+
+Business Combinations Under IFRS 3
+IFRS 3 requires acquisition method for business combinations. Acquirer recognizes acquired assets and liabilities at fair value. 
+Goodwill is the excess of consideration over net assets. Intangible assets are separately recognized when identifiable. Contingent 
+consideration is included in acquisition accounting. Business combination affects consolidated statements.
+
+Auditor Responsibilities
+Auditors assess fraud risks and design procedures to detect material misstatements. Planning includes understanding business and risks. 
+Risk assessment procedures identify fraud risk factors. Substantive procedures test account balances. Auditors evaluate control environment 
+and management integrity. Documentation supports audit conclusions.
+
+Earnings Per Share Calculation
+Earnings per share (EPS) measures earnings available to shareholders. Basic EPS equals net income divided by weighted average shares 
+outstanding. Diluted EPS includes potential shares from options and convertibles. Adjustments for stock splits and dividends affect 
+calculations. EPS trends indicate company performance.
+
+Cost of Goods Sold
+Cost of goods sold includes direct materials, direct labor, and manufacturing overhead. Inventory accounting methods include FIFO, 
+LIFO, and average cost. FIFO assumes oldest inventory sells first. LIFO assumes newest inventory sells first. Methods affect gross 
+profit and inventory valuation. Consistency is required.
+
+Internal Controls Assessment
+Internal controls provide reasonable assurance about financial statement reliability. Control environment sets organizational tone. 
+Risk assessment identifies fraud risks. Control activities prevent or detect errors. Information systems support financial reporting. 
+Monitoring ensures controls function effectively.
+
+Asset Impairment Testing
+Impairment occurs when asset book value exceeds recoverable amount. Triggered by significant economic changes. Recoverability test uses 
+undiscounted future cash flows. Impairment loss equals book value minus fair value. Non-reversible under IFRS. Disclosure requirements 
+specify impairment impacts.

@@ -1,0 +1,74 @@
+[
+  {
+    "query": "What vital signs should be measured during a patient visit?",
+    "gold_keywords": ["blood pressure", "heart rate", "respiratory rate", "body temperature", "oxygen saturation"],
+    "expected_answer": "Healthcare providers must measure systolic and diastolic blood pressure, heart rate, respiratory rate, body temperature, and oxygen saturation.",
+    "difficulty": "easy"
+  },
+  {
+    "query": "What is the normal range for blood pressure and oxygen saturation?",
+    "gold_keywords": ["120/80 mmHg", "blood pressure", "95%", "oxygen saturation"],
+    "expected_answer": "Normal blood pressure is less than 120/80 mmHg and oxygen saturation should be above 95%.",
+    "difficulty": "medium"
+  },
+  {
+    "query": "What are the Five Rights of medication administration?",
+    "gold_keywords": ["right patient", "right medication", "right dose", "right route", "right time"],
+    "expected_answer": "The Five Rights are: right patient, right medication, right dose, right route, and right time.",
+    "difficulty": "easy"
+  },
+  {
+    "query": "Explain the different precaution levels used in infection control.",
+    "gold_keywords": ["standard precautions", "contact precautions", "droplet precautions", "airborne precautions"],
+    "expected_answer": "Hospitals use standard precautions for all patients, contact precautions for direct contact diseases, droplet precautions for airborne diseases within 3 feet, and airborne precautions for diseases like tuberculosis requiring N95 masks.",
+    "difficulty": "hard"
+  },
+  {
+    "query": "What diagnostic test measures red and white blood cells, hemoglobin, and platelets?",
+    "gold_keywords": ["complete blood count", "CBC", "white blood cells", "red blood cells", "hemoglobin"],
+    "expected_answer": "A complete blood count (CBC) measures white blood cells, red blood cells, hemoglobin, hematocrit, and platelets.",
+    "difficulty": "easy"
+  },
+  {
+    "query": "What is the proper CPR compression rate and depth?",
+    "gold_keywords": ["100-120 compressions per minute", "2-2.4 inches", "compression depth"],
+    "expected_answer": "Current guidelines recommend starting chest compressions at a rate of 100-120 compressions per minute with a depth of 2-2.4 inches.",
+    "difficulty": "medium"
+  },
+  {
+    "query": "What is required before any surgical procedure?",
+    "gold_keywords": ["time-out procedure", "patient identity", "site of surgery", "surgical team confirms"],
+    "expected_answer": "The 'time-out' procedure must be performed where the surgical team confirms the patient's identity, the site and side of surgery, and relevant medical history.",
+    "difficulty": "medium"
+  },
+  {
+    "query": "What information must be included in the discharge summary?",
+    "gold_keywords": ["diagnosis", "procedures performed", "medications prescribed", "activity restrictions", "follow-up appointments"],
+    "expected_answer": "The discharge summary must include diagnosis, procedures performed, medications prescribed, activity restrictions, and follow-up appointments.",
+    "difficulty": "easy"
+  },
+  {
+    "query": "How long should patients be kept NPO after anesthesia and why?",
+    "gold_keywords": ["NPO", "protective airway reflexes", "nothing by mouth", "aspiration risk"],
+    "expected_answer": "Patients must be kept NPO (nothing by mouth) until they are fully alert and have protective airway reflexes intact to prevent aspiration.",
+    "difficulty": "medium"
+  },
+  {
+    "query": "What is the medication administration dosing for epinephrine and amiodarone during cardiac arrest?",
+    "gold_keywords": ["epinephrine every 3-5 minutes", "amiodarone after first shock", "ACLS guidelines"],
+    "expected_answer": "According to ACLS guidelines, epinephrine is administered every 3-5 minutes and amiodarone after the first shock during cardiac arrest.",
+    "difficulty": "hard"
+  },
+  {
+    "query": "What minimum identifiers must be used to verify patient identity before procedures?",
+    "gold_keywords": ["two identifiers", "name", "medical record number", "date of birth"],
+    "expected_answer": "Staff must verify patient identity using at least two identifiers before administering any medication or procedure.",
+    "difficulty": "medium"
+  },
+  {
+    "query": "What are the roles of different imaging procedures in diagnosis?",
+    "gold_keywords": ["X-ray", "bone", "lung", "ultrasound", "soft tissue", "MRI", "CT scans", "cancer screening"],
+    "expected_answer": "X-ray is used for bone and lung visualization, ultrasound for soft tissue imaging, MRI for detailed soft tissue images, and CT scans for cancer screening and trauma assessment.",
+    "difficulty": "hard"
+  }
+]

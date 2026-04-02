@@ -1,0 +1,42 @@
+[
+  {
+    "question": "What is the process of photosynthesis and its main stages?",
+    "gold_keywords": ["photosynthesis", "light-dependent", "light-independent", "ATP", "NADPH", "glucose"]
+  },
+  {
+    "question": "Explain the structure and function of mitochondria in cells.",
+    "gold_keywords": ["mitochondria", "ATP", "energy", "cristae", "matrix", "cellular respiration"]
+  },
+  {
+    "question": "What are the differences between prokaryotic and eukaryotic cells?",
+    "gold_keywords": ["prokaryotic", "eukaryotic", "nucleus", "membrane-bound", "organelles", "bacteria"]
+  },
+  {
+    "question": "Describe the water cycle and its major components.",
+    "gold_keywords": ["water cycle", "evaporation", "condensation", "precipitation", "transpiration", "runoff"]
+  },
+  {
+    "question": "What is DNA replication and how does it occur?",
+    "gold_keywords": ["DNA replication", "semiconservative", "helicase", "primase", "DNA polymerase", "semi-discontinuous"]
+  },
+  {
+    "question": "Explain the concept of natural selection and evolution.",
+    "gold_keywords": ["natural selection", "evolution", "adaptation", "survival", "mutation", "fitness"]
+  },
+  {
+    "question": "What are the layers of the Earth and their characteristics?",
+    "gold_keywords": ["crust", "mantle", "core", "lithosphere", "asthenosphere", "temperature", "composition"]
+  },
+  {
+    "question": "Describe the human circulatory system and blood flow.",
+    "gold_keywords": ["circulatory system", "heart", "arteries", "veins", "blood flow", "oxygenated", "deoxygenated"]
+  },
+  {
+    "question": "What is the greenhouse effect and global warming?",
+    "gold_keywords": ["greenhouse effect", "carbon dioxide", "atmosphere", "infrared", "global warming", "climate change"]
+  },
+  {
+    "question": "Explain the process of meiosis and its importance.",
+    "gold_keywords": ["meiosis", "gametes", "haploid", "diploid", "prophase", "metaphase", "genetic diversity"]
+  }
+]

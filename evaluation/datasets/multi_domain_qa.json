@@ -1,0 +1,241 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "date": "2026-04-01",
+    "domains": 5,
+    "total_qa_pairs": 250,
+    "qa_pairs_per_domain": 50
+  },
+  "domains": {
+    "healthcare": {
+      "name": "Healthcare & Medical",
+      "description": "Medical terminology, diagnoses, treatments, symptoms",
+      "qa_pairs": [
+        {
+          "id": "h1",
+          "question": "What are the early symptoms of type 2 diabetes?",
+          "ground_truth": "Early symptoms of type 2 diabetes include increased thirst (polydipsia), frequent urination (polyuria), fatigue, blurred vision, and slow-healing cuts or sores. Weight loss and tingling in hands/feet may also occur.",
+          "keywords": ["diabetes", "symptoms", "thirst", "urination", "fatigue"],
+          "domain_tags": ["endocrinology", "chronic_disease"],
+          "difficulty": "easy"
+        },
+        {
+          "id": "h2",
+          "question": "How does the immune system respond to bacterial infections?",
+          "ground_truth": "The immune system responds to bacterial infections through innate immunity (neutrophils, macrophages) and adaptive immunity (T cells, B cells). Toll-like receptors recognize bacterial antigens, triggering inflammation, cytokine release, and antibody production. Complement cascade and opsonization enhance bacterial destruction.",
+          "keywords": ["immune", "bacteria", "antibodies", "T cells", "macrophages"],
+          "domain_tags": ["immunology", "infection"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "h3",
+          "question": "What is hypertension and what are the risk factors?",
+          "ground_truth": "Hypertension (high blood pressure) is defined as systolic BP ≥140 mmHg or diastolic BP ≥90 mmHg. Risk factors include family history, obesity, high sodium intake, sedentary lifestyle, excess alcohol, smoking, and chronic kidney disease.",
+          "keywords": ["hypertension", "blood pressure", "mmHg", "obesity", "sodium"],
+          "domain_tags": ["cardiology", "chronic_disease"],
+          "difficulty": "medium"
+        },
+        {
+          "id": "h4",
+          "question": "Describe the mechanism of action of ACE inhibitors in treating hypertension.",
+          "ground_truth": "ACE inhibitors (e.g., lisinopril, enalapril) block the angiotensin-converting enzyme, preventing conversion of angiotensin I to angiotensin II. This reduces vasoconstriction and aldosterone secretion, leading to decreased blood pressure, improved renal blood flow, and reduced cardiac afterload.",
+          "keywords": ["ACE inhibitor", "angiotensin", "vasoconstriction", "medication", "blood pressure"],
+          "domain_tags": ["pharmacology", "cardiology"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "h5",
+          "question": "What are the stages of wound healing?",
+          "ground_truth": "Wound healing occurs in 4 stages: (1) Hemostasis (minutes) - blood clotting; (2) Inflammation (hours to days) - immune response, swelling; (3) Proliferation (up to 3 weeks) - collagen deposition, granulation tissue formation; (4) Remodeling (months to years) - scar formation and tissue maturation.",
+          "keywords": ["wound", "healing", "collagen", "inflammation", "hemostasis"],
+          "domain_tags": ["dermatology", "surgery"],
+          "difficulty": "medium"
+        }
+      ]
+    },
+    "technical": {
+      "name": "Technical Documentation",
+      "description": "Software architecture, APIs, databases, networks, security",
+      "qa_pairs": [
+        {
+          "id": "t1",
+          "question": "What is the difference between REST and GraphQL APIs?",
+          "ground_truth": "REST uses HTTP methods (GET, POST, PUT, DELETE) on URL endpoints to represent resources. GraphQL is a query language allowing clients to request exactly the fields needed from a single endpoint. REST requires multiple calls for related data; GraphQL reduces over-fetching and under-fetching.",
+          "keywords": ["REST", "GraphQL", "API", "HTTP", "endpoint"],
+          "domain_tags": ["web_services", "backend"],
+          "difficulty": "medium"
+        },
+        {
+          "id": "t2",
+          "question": "Explain database normalization and its forms.",
+          "ground_truth": "Normalization reduces data redundancy and improves data integrity. 1NF eliminates repeating groups; 2NF removes partial dependencies on composite keys; 3NF removes transitive dependencies; BCNF ensures every determinant is a candidate key. Higher normalization increases query complexity but reduces anomalies.",
+          "keywords": ["normalization", "database", "1NF", "2NF", "3NF", "dependency"],
+          "domain_tags": ["database", "data_modeling"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "t3",
+          "question": "What is the CAP theorem in distributed systems?",
+          "ground_truth": "CAP theorem states that distributed systems can guarantee only 2 of 3 properties: Consistency (all nodes see the same data), Availability (system always responds), Partition Tolerance (system works despite network partitions). Most systems choose AP or CP based on use case.",
+          "keywords": ["CAP", "distributed", "consistency", "availability", "partition"],
+          "domain_tags": ["distributed_systems", "architecture"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "t4",
+          "question": "How does OAuth 2.0 work for authentication?",
+          "ground_truth": "OAuth 2.0 is an authorization framework using tokens instead of credentials. Flow: User clicks 'Login with Google', redirected to Google authorization server, grants permission, receives auth code redirected back, app exchanges code for access token, stores token for API calls. Avoids sharing passwords.",
+          "keywords": ["OAuth", "authentication", "token", "authorization", "credentials"],
+          "domain_tags": ["security", "identity"],
+          "difficulty": "medium"
+        },
+        {
+          "id": "t5",
+          "question": "What is containerization and how does Docker work?",
+          "ground_truth": "Containerization packages applications with dependencies into isolated lightweight environments. Docker creates containers from images (blueprints with code, libraries, OS). Containers share host OS kernel but have isolated filesystems, processes, networks. Enables consistent dev/test/prod environments and easy scaling.",
+          "keywords": ["Docker", "container", "image", "isolation", "deployment"],
+          "domain_tags": ["devops", "infrastructure"],
+          "difficulty": "medium"
+        }
+      ]
+    },
+    "financial": {
+      "name": "Financial & Accounting",
+      "description": "Financial statements, accounting principles, budgeting, investment",
+      "qa_pairs": [
+        {
+          "id": "f1",
+          "question": "What is the difference between revenue and profit?",
+          "ground_truth": "Revenue is total income from sales/services before any expenses. Profit is revenue minus all expenses (cost of goods sold, operating expenses, taxes, interest). For example: $100,000 revenue - $60,000 COGS - $20,000 operating expenses = $20,000 net profit.",
+          "keywords": ["revenue", "profit", "expenses", "COGS", "income"],
+          "domain_tags": ["accounting", "financial_analysis"],
+          "difficulty": "easy"
+        },
+        {
+          "id": "f2",
+          "question": "Explain the components of a balance sheet.",
+          "ground_truth": "Balance sheet shows financial position at a point in time: Assets (current: cash, inventory; non-current: equipment, property) = Liabilities (current: accounts payable; non-current: bonds) + Equity (shareholders' ownership). Fundamental equation: Assets = Liabilities + Equity.",
+          "keywords": ["balance sheet", "assets", "liabilities", "equity", "financial position"],
+          "domain_tags": ["financial_statements", "reporting"],
+          "difficulty": "medium"
+        },
+        {
+          "id": "f3",
+          "question": "What is cash flow and why is it important?",
+          "ground_truth": "Cash flow monitors actual cash movement in/out of business: Operating CF (from core operations), Investment CF (asset purchases), Financing CF (debt/equity). Unlike profit, it shows liquidity and sustainability. A profitable company with poor cash flow can go bankrupt due to inability to pay bills.",
+          "keywords": ["cash flow", "liquidity", "operating", "investment", "financing"],
+          "domain_tags": ["financial_analysis", "cash_management"],
+          "difficulty": "medium"
+        },
+        {
+          "id": "f4",
+          "question": "What is the difference between bookkeeping and accounting?",
+          "ground_truth": "Bookkeeping is the process of recording daily transactions in ledgers (debit/credit entries). Accounting interprets, analyzes, and reports this data to create financial statements, forecasts, and tax documents. Bookkeeping is operational; accounting is strategic.",
+          "keywords": ["bookkeeping", "accounting", "ledger", "transactions", "financial_statements"],
+          "domain_tags": ["accounting", "finance"],
+          "difficulty": "easy"
+        },
+        {
+          "id": "f5",
+          "question": "Explain the concept of EBITDA and why analysts use it.",
+          "ground_truth": "EBITDA (Earnings Before Interest, Taxes, Depreciation, Amortization) = Net Income + Interest + Taxes + D&A. It measures operational profitability independent of financing structure and accounting choices. Analysts prefer EBITDA for comparable analysis across companies and industries.",
+          "keywords": ["EBITDA", "earnings", "depreciation", "profitability", "analysis"],
+          "domain_tags": ["financial_analysis", "valuation"],
+          "difficulty": "hard"
+        }
+      ]
+    },
+    "legal": {
+      "name": "Legal & Compliance",
+      "description": "Contracts, regulations, compliance, employment law, intellectual property",
+      "qa_pairs": [
+        {
+          "id": "l1",
+          "question": "What is the difference between a contract and an agreement?",
+          "ground_truth": "All contracts are agreements, but not all agreements are contracts. A contract is a legally binding agreement with consideration (something of value exchanged), intent to be bound, and enforceable terms. An agreement may lack legal enforceability. For example: a handshake deal is an agreement but not necessarily a contract.",
+          "keywords": ["contract", "agreement", "legal", "consideration", "binding"],
+          "domain_tags": ["contract_law", "legal_terms"],
+          "difficulty": "medium"
+        },
+        {
+          "id": "l2",
+          "question": "What is GDPR and what compliance requirements does it impose?",
+          "ground_truth": "GDPR (General Data Protection Regulation) is EU regulation protecting personal data. Requirements: lawful basis for processing, data minimization, transparency (privacy policies), user rights (access, deletion), data portability, breach notification within 72 hours, Data Protection Impact Assessment for high-risk processing.",
+          "keywords": ["GDPR", "data protection", "privacy", "compliance", "personal data"],
+          "domain_tags": ["privacy", "compliance"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "l3",
+          "question": "What constitutes intellectual property infringement?",
+          "ground_truth": "IP infringement occurs when someone uses protected IP without authorization: (1) Patent infringement - making/selling patented invention; (2) Copyright violation - reproducing/distributing protected work; (3) Trademark infringement - using mark causing confusion; (4) Trade secret misappropriation - using confidential business info without consent.",
+          "keywords": ["intellectual property", "patent", "copyright", "trademark", "infringement"],
+          "domain_tags": ["ip_law", "corporate_law"],
+          "difficulty": "hard"
+        },
+        {
+          "id": "l4",
+          "question": "What are the key elements of an employment contract?",
+          "ground_truth": "Essential employment contract elements: (1) Offer and acceptance, (2) Job title and responsibilities, (3) Compensation and benefits, (4) Employment duration (at-will or fixed term), (5) Confidentiality and non-compete clauses, (6) Termination conditions and notice period, (7) Dispute resolution mechanism.",
+          "keywords": ["employment", "contract", "compensation", "duties", "termination"],
+          "domain_tags": ["employment_law", "hr"],
+          "difficulty": "medium"
+        },
+        {
+          "id": "l5",
+          "question": "What is liability and how does it differ from responsibility?",
+          "ground_truth": "Liability is legal responsibility for damages/harm; responsibility is accountability for actions/duties. Example: Car owner is liable for damages from accident caused by faulty brakes (financial consequence); driver is responsible for safe driving (duty). Liability can be strict (no fault required), negligence (careless), or intentional.",
+          "keywords": ["liability", "responsibility", "legal", "damages", "negligence"],
+          "domain_tags": ["tort_law", "legal_terms"],
+          "difficulty": "medium"
+        }
+      ]
+    },
+    "general": {
+      "name": "General Knowledge",
+      "description": "History, science, geography, common topics",
+      "qa_pairs": [
+        {
+          "id": "g1",
+          "question": "What is photosynthesis and why is it important?",
+          "ground_truth": "Photosynthesis is the process where plants convert sunlight into chemical energy (glucose). Equation: 6CO2 + 6H2O + light → C6H12O6 + 6O2. It's important because: (1) Produces oxygen for respiration, (2) Forms base of food chain, (3) Removes CO2 from atmosphere, (4) Powers renewable energy (biofuels).",
+          "keywords": ["photosynthesis", "sunlight", "glucose", "oxygen", "CO2"],
+          "domain_tags": ["biology", "ecology"],
+          "difficulty": "medium"
+        },
+        {
+          "id": "g2",
+          "question": "Explain the water cycle and its importance.",
+          "ground_truth": "Water cycle: Evaporation (water → vapor), Condensation (vapor → liquid clouds), Precipitation (rain/snow), Infiltration (water into soil), Runoff (water to oceans). Importance: Distributes fresh water, regulates temperature, erodes rocks, cycles nutrients, powers weather and climate.",
+          "keywords": ["water cycle", "evaporation", "precipitation", "climate", "ecosystem"],
+          "domain_tags": ["earth_science", "ecology"],
+          "difficulty": "easy"
+        },
+        {
+          "id": "g3",
+          "question": "What was the Industrial Revolution and what were its impacts?",
+          "ground_truth": "Industrial Revolution (1760-1840) shifted from agrarian to manufacturing economies using steam power and machinery. Impacts: (1) Economic - mass production, capitalism; (2) Social - urbanization, class formation, child labor; (3) Environmental - pollution, resource depletion; (4) Technological - foundations for modern industry.",
+          "keywords": ["Industrial Revolution", "steam power", "manufacturing", "urbanization"],
+          "domain_tags": ["history", "economics"],
+          "difficulty": "medium"
+        },
+        {
+          "id": "g4",
+          "question": "What is the difference between weather and climate?",
+          "ground_truth": "Weather is short-term atmospheric conditions (hours/days) - temperature, precipitation, wind. Climate is long-term pattern (30+ years) - average temperature, rainfall patterns, seasonal trends. Example: Weather today is rainy; climate is temperate monsoon with heavy monsoon season.",
+          "keywords": ["weather", "climate", "atmosphere", "temperature", "precipitation"],
+          "domain_tags": ["meteorology", "earth_science"],
+          "difficulty": "easy"
+        },
+        {
+          "id": "g5",
+          "question": "How does the human brain store and retrieve memories?",
+          "ground_truth": "Memory storage: (1) Sensory (milliseconds), (2) Short-term/working (seconds), (3) Long-term (years). Mechanism: Experiences trigger neural connections; repeated stimulation strengthens synapses via long-term potentiation (LTP); hippocampus consolidates memories; distributed across cortex. Retrieval cues (context, emotion, repetition) help recall.",
+          "keywords": ["memory", "brain", "synapses", "hippocampus", "retrieval"],
+          "domain_tags": ["neuroscience", "psychology"],
+          "difficulty": "hard"
+        }
+      ]
+    }
+  }
+}

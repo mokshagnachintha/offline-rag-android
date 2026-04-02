@@ -1,0 +1,74 @@
+[
+  {
+    "query": "What are the essential elements required for a valid contract?",
+    "gold_keywords": ["offer", "acceptance", "consideration", "intent to be bound", "certainty of terms", "legality"],
+    "expected_answer": "Essential elements include offer, acceptance, consideration (something of value), intent to be bound, certainty of terms, and legality of the purpose.",
+    "difficulty": "easy"
+  },
+  {
+    "query": "What three employment discrimination laws protect workers and what do they cover?",
+    "gold_keywords": ["Title VII", "Civil Rights Act", "ADA", "Americans with Disabilities Act", "ADEA", "Age Discrimination"],
+    "expected_answer": "Title VII prohibits discrimination based on race, color, religion, sex, or national origin. ADA prohibits discrimination against disabled employees. ADEA protects employees age 40 and older.",
+    "difficulty": "medium"
+  },
+  {
+    "query": "What are the fiduciary duties of corporate directors?",
+    "gold_keywords": ["duty of care", "duty of loyalty", "Board of Directors", "informed decisions", "best interest"],
+    "expected_answer": "Directors have the duty of care to make informed decisions and duty of loyalty to act in the corporation's best interest and avoid self-dealing.",
+    "difficulty": "medium"
+  },
+  {
+    "query": "What is insider trading and what are the penalties?",
+    "gold_keywords": ["insider trading", "material non-public information", "securities", "officers", "directors"],
+    "expected_answer": "Insider trading involves buying or selling securities based on material non-public information. Officers and directors must comply with trading restrictions and blackout periods.",
+    "difficulty": "hard"
+  },
+  {
+    "query": "What is the difference between patents, trademarks, and copyrights?",
+    "gold_keywords": ["patents", "inventions", "trademarks", "brand names", "copyrights", "works of authorship"],
+    "expected_answer": "Patents protect inventions for ~20 years. Trademarks protect brand names and logos. Copyrights protect creative works and last for the author's life plus 70 years.",
+    "difficulty": "medium"
+  },
+  {
+    "query": "How do the Sarbanes-Oxley Act and PCAOB protect investors?",
+    "gold_keywords": ["Sarbanes-Oxley", "SOX", "PCAOB", "financial statements", "internal controls", "audit"],
+    "expected_answer": "SOX requires management certification of financial statements and establishes the PCAOB. Section 404 requires annual audits of internal controls to protect investor interests.",
+    "difficulty": "hard"
+  },
+  {
+    "query": "What is the liability exposure in wrongful termination claims?",
+    "gold_keywords": ["wrongful termination", "illegal reasons", "at-will employment", "protected class", "retaliation"],
+    "expected_answer": "Wrongful termination occurs when an employee is fired for illegal reasons like discrimination or reporting violations, despite at-will employment in most states.",
+    "difficulty": "hard"
+  },
+  {
+    "query": "What are the key differences between civil and criminal litigation?",
+    "gold_keywords": ["civil litigation", "private parties", "damages", "criminal litigation", "government", "prosecution"],
+    "expected_answer": "Civil litigation involves disputes between private parties seeking damages or injunctions. Criminal litigation involves the government prosecuting individuals for criminal violations.",
+    "difficulty": "easy"
+  },
+  {
+    "query": "What is the General Data Protection Regulation and what rights does it give individuals?",
+    "gold_keywords": ["GDPR", "personal data", "individuals", "access", "correction", "deletion"],
+    "expected_answer": "GDPR regulates personal data collection and gives individuals rights including access to their data, correction of inaccurate data, and right to be forgotten.",
+    "difficulty": "medium"
+  },
+  {
+    "query": "What is the Foreign Corrupt Practices Act and what conduct does it prohibit?",
+    "gold_keywords": ["FCPA", "Foreign Corrupt Practices Act", "bribing", "foreign officials", "international transactions"],
+    "expected_answer": "The FCPA prohibits U.S. companies from bribing foreign officials and requires performing due diligence on international business partners.",
+    "difficulty": "hard"
+  },
+  {
+    "query": "What are trade secrets and what protection do they receive?",
+    "gold_keywords": ["trade secrets", "confidential information", "competitive advantage", "reasonable efforts", "Uniform Trade Secrets Act"),
+    "expected_answer": "Trade secrets are confidential information providing competitive advantage like formulas or processes. Protection requires reasonable efforts to maintain secrecy under the Uniform Trade Secrets Act.",
+    "difficulty": "medium"
+  },
+  {
+    "query": "Explain the different environmental laws and what they regulate.",
+    "gold_keywords": ["Clean Water Act", "Clean Air Act", "water discharges", "atmospheric emissions", "EPA", "environmental"],
+    "expected_answer": "Clean Water Act regulates water discharges, Clean Air Act regulates atmospheric emissions, and EPA administers major environmental statutes protecting air, water, and land.",
+    "difficulty": "hard"
+  }
+]

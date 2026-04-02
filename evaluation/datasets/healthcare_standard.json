@@ -1,0 +1,52 @@
+[
+  {
+    "query": "What is the standard treatment protocol for acute myocardial infarction?",
+    "gold_keywords": ["myocardial infarction", "acute coronary syndrome", "primary percutaneous coronary intervention", "thrombolytics", "aspirin"],
+    "expected_answer": "Acute MI treatment includes immediate antiplatelet therapy, anticoagulation, reperfusion therapy (PCI or thrombolytics), and management of complications."
+  },
+  {
+    "query": "How is type 2 diabetes diagnosed and managed?",
+    "gold_keywords": ["type 2 diabetes", "HbA1c", "fasting glucose", "metformin", "insulin resistance"],
+    "expected_answer": "Type 2 diabetes is diagnosed using HbA1c >6.5%, fasting glucose >126, or 2-hour glucose >200. Management includes metformin, lifestyle modifications, and other antidiabetic agents."
+  },
+  {
+    "query": "What are the clinical features and management of septic shock?",
+    "gold_keywords": ["septic shock", "sepsis", "lactate", "broad-spectrum antibiotics", "vasopressors", "fluid resuscitation"],
+    "expected_answer": "Septic shock presents with hypotension, altered perfusion, and requires early antibiotics, aggressive fluid resuscitation, and vasopressor support."
+  },
+  {
+    "query": "Describe the pathophysiology of asthma and current treatment guidelines",
+    "gold_keywords": ["asthma", "bronchial hyperresponsiveness", "bronchodilators", "inhaled corticosteroids", "inflammatory cascade"],
+    "expected_answer": "Asthma involves airway inflammation and hyperresponsiveness. Treatment uses step-wise approach with ICS as controller and SABA as reliever therapy."
+  },
+  {
+    "query": "What is the role of statins in cardiovascular disease prevention?",
+    "gold_keywords": ["statins", "LDL cholesterol", "cardiovascular disease", "atherosclerosis", "HMG-CoA reductase"],
+    "expected_answer": "Statins reduce LDL cholesterol, decrease atherosclerotic plaque formation, and reduce cardiovascular risk in primary and secondary prevention."
+  },
+  {
+    "query": "How is hypertension classified and managed according to current guidelines?",
+    "gold_keywords": ["hypertension", "stage 1", "stage 2", "ACE inhibitors", "beta-blockers", "thiazide diuretics"],
+    "expected_answer": "Hypertension is classified by BP readings. Management follows step-wise approach starting with lifestyle modification and antihypertensive medications."
+  },
+  {
+    "query": "Explain the diagnosis and management of chronic kidney disease",
+    "gold_keywords": ["chronic kidney disease", "GFR", "eGFR", "proteinuria", "ACE inhibitors", "CKD stage"],
+    "expected_answer": "CKD is defined by reduced GFR and/or albuminuria. Management focuses on slowing progression using RAS inhibitors and blood pressure control."
+  },
+  {
+    "query": "What are the diagnostic criteria and treatment of depression?",
+    "gold_keywords": ["major depressive disorder", "DSM-5", "selective serotonin reuptake inhibitors", "SSRIs", "symptoms", "brain neurochemistry"],
+    "expected_answer": "Depression diagnosis requires 5+ symptoms for ≥2 weeks. Treatment includes SSRIs, psychotherapy, and lifestyle modifications."
+  },
+  {
+    "query": "Describe the management of acute bacterial meningitis",
+    "gold_keywords": ["meningitis", "cerebrospinal fluid", "antibiotics", "lumbar puncture", "vancomycin", "cephalosporin"],
+    "expected_answer": "Bacterial meningitis requires immediate antibiotics, supportive care, and dexamethasone. Diagnosis confirmed via CSF analysis."
+  },
+  {
+    "query": "What is the screening and prevention strategy for colorectal cancer?",
+    "gold_keywords": ["colorectal cancer", "colonoscopy", "screening", "polyps", "fecal occult blood", "age 45"],
+    "expected_answer": "Colorectal cancer screening recommended starting age 45 using colonoscopy every 10 years or annual FOBT/FIT."
+  }
+]

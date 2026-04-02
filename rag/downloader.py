@@ -1,20 +1,7 @@
 """
-downloader.py — Download Gemma GGUF models from Hugging Face Hub.
+downloader.py — Download GGUF models from Hugging Face Hub.
 
-Uses `huggingface_hub.hf_hub_download` which:
-  • Resumes interrupted downloads automatically
-  • Verifies SHA-256 integrity after download
-  • Reports byte-level download progress via tqdm callback
 
-Default auto-download (runs on first app launch, no login required):
-  mradermacher/Gemma-3-1B-it-GLM-4.7-Flash-Heretic-Uncensored-Thinking-i1-GGUF
-  →  Gemma-3-1B-it-GLM-4.7-Flash-Heretic-Uncensored-Thinking.i1-Q4_K_M.gguf (~806 MB)
-
-Full catalogue (user can pick any in Settings — all Apache 2.0, no login needed):
-  i1-Q2_K    ~690 MB  (smallest)
-  i1-Q4_K_M  ~806 MB  ← AUTO (recommended)
-  i1-Q5_K_M  ~851 MB
-  i1-Q6_K    ~1.0 GB  (highest quality)
 """
 from __future__ import annotations
 

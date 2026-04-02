@@ -1,0 +1,74 @@
+[
+  {
+    "query": "What are the three main financial statements and what do they show?",
+    "gold_keywords": ["balance sheet", "income statement", "cash flow statement", "assets", "liabilities", "revenues", "expenses"],
+    "expected_answer": "The balance sheet shows assets, liabilities, and shareholders' equity at a specific point. The income statement reports revenues, expenses, and profits over a period. The cash flow statement shows operating, investing, and financing activities.",
+    "difficulty": "easy"
+  },
+  {
+    "query": "Explain the difference between GAAP and IFRS accounting standards.",
+    "gold_keywords": ["GAAP", "IFRS", "United States", "other countries", "rules-based", "principles-based"],
+    "expected_answer": "GAAP is the standard accounting rules used in the United States and is rules-based. IFRS is used in most other countries and is more principles-based.",
+    "difficulty": "medium"
+  },
+  {
+    "query": "What is the debt-to-equity ratio and what does it measure?",
+    "gold_keywords": ["debt-to-equity ratio", "financial leverage", "risk", "liabilities"],
+    "expected_answer": "The debt-to-equity ratio measures financial leverage and risk by comparing total debt to shareholders' equity. Highly leveraged companies are more vulnerable to downturns.",
+    "difficulty": "medium"
+  },
+  {
+    "query": "What is the cash conversion cycle and why is it important?",
+    "gold_keywords": ["cash conversion cycle", "paying suppliers", "collecting from customers", "cash flow", "working capital"],
+    "expected_answer": "The cash conversion cycle measures the time from paying suppliers to collecting from customers. It's important for maintaining positive cash flow.",
+    "difficulty": "hard"
+  },
+  {
+    "query": "What are direct costs, indirect costs, and how do they affect unit cost?",
+    "gold_keywords": ["direct costs", "raw materials", "indirect costs", "overhead", "unit cost", "production volume"],
+    "expected_answer": "Direct costs like raw materials vary with production. Indirect costs like overhead don't vary directly. Unit cost decreases as volume increases due to fixed cost spreading.",
+    "difficulty": "medium"
+  },
+  {
+    "query": "Explain the matching principle in accounting.",
+    "gold_keywords": ["matching principle", "revenues", "expenses", "same period"],
+    "expected_answer": "The matching principle requires revenues and related expenses to be recorded in the same period.",
+    "difficulty": "easy"
+  },
+  {
+    "query": "What is the difference between tax deductions and tax credits?",
+    "gold_keywords": ["tax deductions", "reduce taxable income", "tax credits", "reduce tax owed"],
+    "expected_answer": "Tax deductions reduce taxable income, while tax credits directly reduce tax owed and are more valuable than deductions.",
+    "difficulty": "medium"
+  },
+  {
+    "query": "How does segregation of duties prevent fraud in internal controls?",
+    "gold_keywords": ["segregation of duties", "single person", "complete control", "transaction", "fraud prevention"],
+    "expected_answer": "Segregation of duties ensures no single person has complete control over any transaction, preventing fraud by requiring multiple people to authorize and execute transactions.",
+    "difficulty": "hard"
+  },
+  {
+    "query": "What is the difference between gross profit margin and net profit margin?",
+    "gold_keywords": ["gross profit margin", "gross profit", "net profit margin", "net income", "revenue"],
+    "expected_answer": "Gross profit margin equals gross profit divided by revenue. Net profit margin equals net income divided by revenue and accounts for all expenses.",
+    "difficulty": "medium"
+  },
+  {
+    "query": "What financial documents must public companies file and on what timeline?",
+    "gold_keywords": ["10-Q", "10-K", "quarterly", "annual", "SEC", "45 days", "60 days"],
+    "expected_answer": "Public companies must file Form 10-Q for quarterly statements within 45 days and Form 10-K for annual statements within 60 days of period end.",
+    "difficulty": "easy"
+  },
+  {
+    "query": "Explain what zero-based budgeting is and how it differs from traditional budgeting.",
+    "gold_keywords": ["zero-based budgeting", "justify expenses", "from scratch", "traditional budgeting", "incrementing"],
+    "expected_answer": "Zero-based budgeting requires justifying all expenses from scratch each year, while traditional budgeting increments prior year budgets.",
+    "difficulty": "hard"
+  },
+  {
+    "query": "What is breakeven analysis and how is contribution margin used in it?",
+    "gold_keywords": ["breakeven analysis", "sales volume", "cover costs", "profit", "contribution margin"],
+    "expected_answer": "Breakeven analysis determines the sales volume needed to cover all costs. Contribution margin equals sales price minus variable cost per unit and shows profitability.",
+    "difficulty": "hard"
+  }
+]

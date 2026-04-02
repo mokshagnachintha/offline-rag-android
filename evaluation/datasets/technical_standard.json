@@ -1,0 +1,52 @@
+[
+  {
+    "query": "What are the best practices for designing a RESTful API?",
+    "gold_keywords": ["REST", "stateless", "resource-oriented", "HTTP methods", "status codes", "rate limiting"],
+    "expected_answer": "RESTful APIs should be stateless, resource-oriented, use appropriate HTTP methods (GET, POST, PUT, DELETE), return proper status codes, and implement rate limiting."
+  },
+  {
+    "query": "How does a microservices architecture differ from monolithic architecture?",
+    "gold_keywords": ["microservices", "monolithic", "scalability", "independence", "distributed", "communication protocols"],
+    "expected_answer": "Microservices are independent, loosely coupled services while monolithic systems are tightly integrated. Microservices enable better scalability and independent deployment."
+  },
+  {
+    "query": "What are the key considerations for database indexing?",
+    "gold_keywords": ["index", "query performance", "B-tree", "hash index", "primary key", "query plan"],
+    "expected_answer": "Indexes improve query performance but add write overhead. Common types include B-tree, hash, and bitmap indexes. Choice depends on query patterns."
+  },
+  {
+    "query": "Explain caching strategies in distributed systems",
+    "gold_keywords": ["caching", "TTL", "cache invalidation", "distributed cache", "Redis", "consistency"],
+    "expected_answer": "Caching reduces latency but requires invalidation strategies. Common approaches include TTL, cache-aside, write-through, and consistent hashing for distributed caches."
+  },
+  {
+    "query": "What are the security best practices for API authentication?",
+    "gold_keywords": ["authentication", "OAuth 2.0", "JWT", "tokens", "API keys", "HTTPS"],
+    "expected_answer": "Use HTTPS, prefer OAuth 2.0 or JWT tokens over API keys, implement token expiration, validate signatures, and follow principle of least privilege."
+  },
+  {
+    "query": "How does load balancing improve system reliability?",
+    "gold_keywords": ["load balancing", "availability", "redundancy", "failover", "round-robin", "health checks"],
+    "expected_answer": "Load balancers distribute traffic across servers, enable horizontal scaling, provide failover capability, and improve system availability and reliability."
+  },
+  {
+    "query": "What is the CAP theorem and its implications for distributed databases?",
+    "gold_keywords": ["CAP theorem", "consistency", "availability", "partition tolerance", "trade-offs", "ACID", "BASE"],
+    "expected_answer": "CAP theorem states systems can guarantee at most 2 of 3 properties. Designers must choose between consistency, availability, and partition tolerance."
+  },
+  {
+    "query": "Explain the significance of version control in software development",
+    "gold_keywords": ["version control", "Git", "commit", "branch", "merge", "collaboration"],
+    "expected_answer": "Version control enables code collaboration, history tracking, branching strategies, and easy rollback. Git is the industry standard."
+  },
+  {
+    "query": "What are the principles of continuous integration and continuous deployment?",
+    "gold_keywords": ["CI/CD", "continuous integration", "continuous deployment", "automated testing", "pipeline", "monitoring"],
+    "expected_answer": "CI/CD automates testing, building, and deployment. Benefits include faster feedback, reduced manual errors, and improved deployment frequency."
+  },
+  {
+    "query": "How do you approach debugging a complex performance issue?",
+    "gold_keywords": ["profiling", "bottleneck", "metrics", "tracing", "monitoring", "optimization"],
+    "expected_answer": "Use profilers and monitoring to identify bottlenecks, collect metrics, analyze traces, establish baselines, then implement and measure optimizations iteratively."
+  }
+]

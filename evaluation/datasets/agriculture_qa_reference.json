@@ -1,0 +1,42 @@
+[
+  {
+    "question": "What are the best practices for sustainable crop rotation?",
+    "gold_keywords": ["crop rotation", "soil health", "nitrogen", "legumes", "pest management", "sustainable"]
+  },
+  {
+    "question": "How do fertilizers affect soil composition and plant growth?",
+    "gold_keywords": ["fertilizers", "nitrogen", "phosphorus", "potassium", "NPK", "soil", "nutrients"]
+  },
+  {
+    "question": "What are the different types of irrigation methods and their efficiency?",
+    "gold_keywords": ["irrigation", "drip irrigation", "sprinkler", "flood irrigation", "water efficiency", "conservation"]
+  },
+  {
+    "question": "Describe integrated pest management techniques in agriculture.",
+    "gold_keywords": ["pest management", "IPM", "biological control", "pesticides", "crop protection", "organic"]
+  },
+  {
+    "question": "What is precision agriculture and its applications?",
+    "gold_keywords": ["precision agriculture", "GPS", "sensors", "data analytics", "yield optimization", "technology"]
+  },
+  {
+    "question": "How does soil erosion occur and what are prevention methods?",
+    "gold_keywords": ["soil erosion", "conservation", "terracing", "contour plowing", "vegetation", "topsoil"]
+  },
+  {
+    "question": "What are the benefits of organic farming practices?",
+    "gold_keywords": ["organic farming", "chemical-free", "composting", "natural fertilizers", "biodiversity", "sustainability"]
+  },
+  {
+    "question": "Explain the stages of plant growth and development.",
+    "gold_keywords": ["plant growth", "germination", "vegetative", "flowering", "fruiting", "maturity", "senescence"]
+  },
+  {
+    "question": "What causes crop diseases and how are they managed?",
+    "gold_keywords": ["crop disease", "fungal", "bacterial", "viral", "disease management", "fungicide", "quarantine"]
+  },
+  {
+    "question": "How do climate and weather patterns affect agricultural productivity?",
+    "gold_keywords": ["climate", "weather", "temperature", "precipitation", "drought", "crop yield", "agriculture"]
+  }
+]

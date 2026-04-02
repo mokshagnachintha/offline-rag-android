@@ -1,0 +1,52 @@
+[
+  {
+    "query": "What are the essential elements required for a valid contract?",
+    "gold_keywords": ["contract", "offer", "acceptance", "consideration", "intent", "capacity"],
+    "expected_answer": "Valid contracts require: offer, acceptance, consideration, intent to be bound, legal capacity, and legal purpose. All elements must be present."
+  },
+  {
+    "query": "How does employment law address wrongful termination?",
+    "gold_keywords": ["wrongful termination", "at-will employment", "breach of contract", "public policy", "discrimination"],
+    "expected_answer": "Employment law protects against termination for illegal reasons, breach of implied contracts, or violations of public policy. Remedies include damages and reinstatement."
+  },
+  {
+    "query": "What is intellectual property and its main categories?",
+    "gold_keywords": ["intellectual property", "patent", "copyright", "trademark", "trade secret"],
+    "expected_answer": "IP includes patents (inventions), copyrights (creative works), trademarks (brand identity), and trade secrets (confidential information). Each has distinct protections."
+  },
+  {
+    "query": "Explain the concept of liability and negligence in tort law",
+    "gold_keywords": ["negligence", "duty of care", "breach", "causation", "damages", "tort"],
+    "expected_answer": "Negligence requires: duty of care, breach of duty, causation, and damages. Establishes liability when defendant fails to exercise reasonable care."
+  },
+  {
+    "query": "What constitutes a valid will and the probate process?",
+    "gold_keywords": ["will", "testator", "probate", "estate", "executor", "beneficiaries"],
+    "expected_answer": "Valid will requires testator capacity, proper execution, and witnesses. Probate process validates will, manages assets, and distributes to beneficiaries."
+  },
+  {
+    "query": "How does contract breach differ between material and minor breach?",
+    "gold_keywords": ["material breach", "minor breach", "substantial performance", "remedies", "rescission"],
+    "expected_answer": "Material breach goes to contract essence and allows rescission. Minor breach allows damages but not contract termination. Remedy depends on breach type."
+  },
+  {
+    "query": "What legal obligations arise from a partnership agreement?",
+    "gold_keywords": ["partnership", "fiduciary duty", "joint liability", "partnership agreement", "dissolution"],
+    "expected_answer": "Partners owe fiduciary duties, share profits/losses, have joint liability, and must comply with partnership agreements and applicable law."
+  },
+  {
+    "query": "Explain the role of mediation versus litigation in dispute resolution",
+    "gold_keywords": ["mediation", "litigation", "arbitration", "settlement", "dispute resolution"],
+    "expected_answer": "Mediation is informal negotiation with facilitator; litigation is formal court process. Mediation is faster, cheaper, and maintains relationships better."
+  },
+  {
+    "query": "What are the main elements of criminal liability?",
+    "gold_keywords": ["criminal liability", "mens rea", "actus reus", "intent", "crime"],
+    "expected_answer": "Criminal liability requires actus reus (guilty act) and mens rea (guilty mind). Intent, recklessness, or negligence establishes culpability."
+  },
+  {
+    "query": "How do regulatory compliance requirements apply to corporations?",
+    "gold_keywords": ["compliance", "regulations", "corporate governance", "SEC", "reporting"],
+    "expected_answer": "Corporations must comply with securities laws, tax regulations, labor laws, and industry-specific rules. Governance structures ensure accountability and compliance."
+  }
+]

@@ -1,0 +1,57 @@
+[
+  {
+    "query": "coronavirus origin and evolution",
+    "gold_keywords": [
+      "coronavirus",
+      "SARS-CoV-2",
+      "origins",
+      "evolution",
+      "zoonotic"
+    ],
+    "source": "trec_covid"
+  },
+  {
+    "query": "COVID-19 vaccines and their effectiveness",
+    "gold_keywords": [
+      "vaccine",
+      "efficacy",
+      "mRNA",
+      "immunization",
+      "antibodies"
+    ],
+    "source": "trec_covid"
+  },
+  {
+    "query": "long COVID symptoms and treatment",
+    "gold_keywords": [
+      "long COVID",
+      "post-viral",
+      "symptoms",
+      "treatment",
+      "recovery"
+    ],
+    "source": "trec_covid"
+  },
+  {
+    "query": "ventilator use and mechanical ventilation",
+    "gold_keywords": [
+      "ventilator",
+      "mechanical",
+      "respiratory",
+      "intubation",
+      "oxygen"
+    ],
+    "source": "trec_covid"
+  },
+  {
+    "query": "COVID-19 impact on healthcare systems",
+    "gold_keywords": [
+      "healthcare",
+      "ICU",
+      "hospital",
+      "capacity",
+      "burden"
+    ],
+    "source": "trec_covid"
+  }
+]

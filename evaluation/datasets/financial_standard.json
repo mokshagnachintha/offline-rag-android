@@ -1,0 +1,52 @@
+[
+  {
+    "query": "How are revenue recognition standards applied under IFRS 15?",
+    "gold_keywords": ["revenue recognition", "IFRS 15", "performance obligations", "contract", "transfer of control"],
+    "expected_answer": "IFRS 15 recognizes revenue when control of goods/services transfers. Must identify contract, performance obligations, transaction price, and allocate consideration."
+  },
+  {
+    "query": "What are the components of a balance sheet and their importance?",
+    "gold_keywords": ["balance sheet", "assets", "liabilities", "equity", "financial position"],
+    "expected_answer": "Balance sheet shows assets, liabilities, and equity. Assets = Liabilities + Equity. Reflects company's financial position at a point in time."
+  },
+  {
+    "query": "Explain the concept of depreciation and its accounting treatment",
+    "gold_keywords": ["depreciation", "useful life", "straight-line", "declining balance", "asset value"],
+    "expected_answer": "Depreciation allocates asset cost over useful life. Methods include straight-line and declining-balance. Reduces asset value and creates expense."
+  },
+  {
+    "query": "How is cash flow statement different from income statement?",
+    "gold_keywords": ["cash flow", "accrual accounting", "operating activities", "investing activities", "financing activities"],
+    "expected_answer": "Cash flow shows actual cash movements in operations, investing, and financing. Income statement uses accrual accounting, not actual cash."
+  },
+  {
+    "query": "What are deferred tax assets and liabilities?",
+    "gold_keywords": ["deferred tax asset", "deferred tax liability", "temporary differences", "taxable income"],
+    "expected_answer": "Deferred taxes result from temporary differences between book and tax accounting. DTAs reduce future tax, DTLs increase future tax liability."
+  },
+  {
+    "query": "Explain the allowance for doubtful accounts and its impact",
+    "gold_keywords": ["bad debt allowance", "doubtful accounts", "receivables", "provision", "impairment"],
+    "expected_answer": "Allowance for doubtful accounts estimates uncollectible receivables. Reduces net receivables and creates bad debt expense on income statement."
+  },
+  {
+    "query": "What is working capital and why is it critical for operations?",
+    "gold_keywords": ["working capital", "current assets", "current liabilities", "liquidity", "cash cycle"],
+    "expected_answer": "Working capital = current assets - current liabilities. Essential for day-to-day operations and indicates liquidity and operational efficiency."
+  },
+  {
+    "query": "How are business combinations accounted for under IFRS 3?",
+    "gold_keywords": ["business combination", "acquisition", "goodwill", "fair value", "intangible assets"],
+    "expected_answer": "IFRS 3 uses acquisition method. Acquirer recognizes assets/liabilities at fair value. Goodwill = consideration - net assets. Intangibles separately recognized."
+  },
+  {
+    "query": "Explain the auditor's responsibility regarding fraud detection",
+    "gold_keywords": ["auditor", "fraud", "misstatement", "internal controls", "audit procedures"],
+    "expected_answer": "Auditors must plan procedures to detect material fraud. Assess fraud risks, evaluate internal controls, and perform appropriate substantive procedures."
+  },
+  {
+    "query": "What is earnings per share and how is it calculated?",
+    "gold_keywords": ["earnings per share", "EPS", "net income", "weighted average shares", "diluted EPS"],
+    "expected_answer": "EPS = net income / weighted average shares outstanding. Basic EPS uses actual shares; diluted EPS includes potential shares from options/convertibles."
+  }
+]

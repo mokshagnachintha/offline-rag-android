@@ -1,0 +1,56 @@
+
+TECHNICAL ARCHITECTURE AND SOFTWARE DESIGN
+
+REST API Design Principles
+RESTful APIs must follow architectural principles for scalability and maintainability. The architecture should be stateless, 
+meaning each request contains all information needed. APIs must be resource-oriented, using nouns for endpoints. HTTP methods 
+(GET, POST, PUT, DELETE) map to operations. Proper status codes indicate results. Rate limiting prevents abuse.
+
+Microservices vs. Monolithic Architecture
+Microservices and monolithic systems represent different architectural approaches. In microservices, services are independent, 
+loosely coupled, and deployed separately. Monolithic systems integrate all functionality tightly. Microservices enable better 
+scalability and independent deployment. Communication between microservices uses REST, gRPC, or message queues.
+
+Database Optimization Through Indexing
+Database indexing dramatically improves query performance. Index types include B-tree (general purpose), hash (exact matches), 
+and bitmap (low-cardinality columns). However, indexes add write overhead. Query plan analysis identifies missing indexes. 
+Primary keys are automatically indexed. Composite indexes serve multiple columns.
+
+Caching Strategies for Performance
+Caching reduces latency in distributed systems. Time-to-live (TTL) expires cached data. Cache invalidation strategies include 
+cache-aside pattern, write-through, and write-behind patterns. Distributed caches like Redis maintain consistency. Key expiration 
+prevents stale data. Cache warming improves cold start performance.
+
+API Security Best Practices
+Secure APIs require HTTPS for encrypted transport. Authentication uses OAuth 2.0 or JWT tokens instead of API keys. Tokens 
+should expire after defined periods. Signature validation ensures token authenticity. API keys are appropriate only for 
+non-sensitive operations. Principle of least privilege limits access permissions.
+
+Load Balancing and Reliability
+Load balancers distribute traffic across multiple servers. Availability improves through redundancy. Failover mechanisms automatically 
+switch to healthy servers. Round-robin and least-connections algorithms distribute load. Health checks monitor server status. 
+Load balancing enables horizontal scaling and improves system reliability.
+
+CAP Theorem in Distributed Systems
+The CAP theorem states systems cannot guarantee all three properties simultaneously: consistency, availability, and partition 
+tolerance. In network failures, systems must choose between strong consistency or high availability. SQL databases prioritize 
+consistency and availability. NoSQL databases often prioritize availability and partition tolerance using eventual consistency.
+
+Version Control and Git
+Version control enables team collaboration and code management. Git is the industry standard system. Commits record changes 
+with messages. Branches allow parallel development. Merging integrates changes. Pull requests enable code review. History tracking 
+allows rollback to previous versions. Distributed nature provides redundancy.
+
+Continuous Integration and Deployment
+CI/CD pipelines automate software delivery. Continuous integration automatically tests code changes. Continuous deployment pushes 
+changes to production. Benefits include faster feedback, reduced manual errors, and improved deployment frequency. Automated testing 
+catches issues early. Monitoring during deployment detects problems.
+
+Performance Debugging Methodology
+Debugging performance issues requires systematic approach. Profilers identify CPU and memory hotspots. Monitoring collects runtime 
+metrics. Tracing follows request paths through systems. Baselines establish expected performance. Root cause analysis identifies 
+bottlenecks. Load testing simulates high traffic. Optimization focuses on identified bottlenecks.
+
+Microservices Communication
+Services communicate through REST APIs, gRPC, or message queues. REST uses HTTP and is language-agnostic. gRPC uses binary protocol 
+and is faster. Message queues decouple services. Service discovery locates services dynamically. API gateways route requests.

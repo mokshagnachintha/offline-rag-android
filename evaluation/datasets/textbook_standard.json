@@ -1,0 +1,52 @@
+[
+  {
+    "query": "Explain the process of photosynthesis and its importance to ecosystems",
+    "gold_keywords": ["photosynthesis", "light-dependent reactions", "light-independent reactions", "chlorophyll", "glucose", "oxygen"],
+    "expected_answer": "Photosynthesis converts light energy to chemical energy (glucose) using water and CO2. Light reactions produce ATP and NADPH; Calvin cycle produces glucose."
+  },
+  {
+    "query": "What is the structure and function of mitochondria?",
+    "gold_keywords": ["mitochondria", "ATP", "electron transport chain", "Krebs cycle", "cristae", "matrix"],
+    "expected_answer": "Mitochondria produce ATP through cellular respiration. Inner membrane contains cristae; matrix contains Krebs cycle enzymes; generates ~30-32 ATP per glucose."
+  },
+  {
+    "query": "Describe the central dogma of molecular biology",
+    "gold_keywords": ["central dogma", "DNA", "RNA", "protein", "transcription", "translation"],
+    "expected_answer": "DNA → RNA (transcription) → Protein (translation). Information flows from DNA through mRNA to proteins. Reversive transcription occurs in some organisms."
+  },
+  {
+    "query": "What is the theory of evolution by natural selection?",
+    "gold_keywords": ["evolution", "natural selection", "adaptation", "variation", "survival of the fittest"],
+    "expected_answer": "Natural selection favors organisms with beneficial traits. Genetic variation, differential reproduction, and heredity drive evolutionary change over generations."
+  },
+  {
+    "query": "Explain the structure of the Earth and plate tectonics",
+    "gold_keywords": ["crust", "mantle", "core", "plate tectonics", "subduction", "fault"],
+    "expected_answer": "Earth has crust, mantle, and core. Plate tectonics explains continental movement, earthquakes, and volcanism through plate interactions."
+  },
+  {
+    "query": "Describe the structure of the circulatory system",
+    "gold_keywords": ["heart", "blood vessels", "arteries", "veins", "capillaries", "hemoglobin"],
+    "expected_answer": "Circulatory system transports oxygen and nutrients. Heart pumps blood through arteries, capillaries to tissues, returns via veins. Hemoglobin carries oxygen."
+  },
+  {
+    "query": "What is the greenhouse effect and its impact on climate?",
+    "gold_keywords": ["greenhouse effect", "greenhouse gases", "global warming", "radiation", "CO2"],
+    "expected_answer": "Greenhouse gases trap heat. CO2, methane, nitrous oxide absorb infrared radiation, warming atmosphere and causing climate change."
+  },
+  {
+    "query": "Explain the process of meiosis and its role in sexual reproduction",
+    "gold_keywords": ["meiosis", "gametes", "haploid", "diploid", "crossing over", "chromosomes"],
+    "expected_answer": "Meiosis produces haploid gametes from diploid cells. Includes crossing over and independent assortment, creating genetic variation in offspring."
+  },
+  {
+    "query": "What is the difference between prokaryotic and eukaryotic cells?",
+    "gold_keywords": ["prokaryotic", "eukaryotic", "nucleus", "organelles", "bacteria", "ribosome"],
+    "expected_answer": "Prokaryotes lack nucleus and organelles; eukaryotes have both. Eukaryotes larger with compartmentalized functions; prokaryotes smaller and simpler."
+  },
+  {
+    "query": "Describe the water cycle and its importance",
+    "gold_keywords": ["water cycle", "evaporation", "condensation", "precipitation", "runoff"],
+    "expected_answer": "Water cycle: evaporation from oceans/surface → condensation in atmosphere → precipitation → runoff to oceans. Distributes water and regulates climate."
+  }
+]

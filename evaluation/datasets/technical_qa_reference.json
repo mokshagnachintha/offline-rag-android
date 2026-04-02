@@ -1,0 +1,74 @@
+[
+  {
+    "query": "What are the main HTTP verbs used in RESTful APIs and what do they do?",
+    "gold_keywords": ["GET", "POST", "PUT", "PATCH", "DELETE", "retrieval", "creation", "replacement", "update"],
+    "expected_answer": "GET is used for retrieval, POST for creation, PUT for full replacement, PATCH for partial updates, and DELETE for removal of resources.",
+    "difficulty": "easy"
+  },
+  {
+    "query": "Explain the three normalization forms in database design.",
+    "gold_keywords": ["First Normal Form", "1NF", "Second Normal Form", "2NF", "Third Normal Form", "3NF", "atomic values", "partial dependencies", "transitive dependencies"],
+    "expected_answer": "1NF eliminates repeating groups with atomic values. 2NF removes partial dependencies where non-key columns depend on part of a composite key. 3NF eliminates transitive dependencies between non-key columns.",
+    "difficulty": "hard"
+  },
+  {
+    "query": "What authentication mechanisms are commonly used for APIs?",
+    "gold_keywords": ["HTTP Basic Authentication", "API keys", "OAuth 2.0", "JWT", "JSON Web Tokens"],
+    "expected_answer": "Common authentication mechanisms include HTTP Basic Authentication, API keys, OAuth 2.0, and JWT (JSON Web Tokens).",
+    "difficulty": "medium"
+  },
+  {
+    "query": "What is the difference between Authorization and Authentication?",
+    "gold_keywords": ["Authentication", "verifies identity", "Authorization", "what allowed to do", "permissions"],
+    "expected_answer": "Authentication verifies the identity of the client, while Authorization determines what authenticated users are allowed to do.",
+    "difficulty": "medium"
+  },
+  {
+    "query": "How should API responses handle errors?",
+    "gold_keywords": ["error code", "descriptive message", "4xx codes", "5xx codes", "client errors", "server errors"],
+    "expected_answer": "Error responses should include an error code and descriptive message. 4xx codes indicate client errors and 5xx codes indicate server errors.",
+    "difficulty": "easy"
+  },
+  {
+    "query": "Explain how pagination should be implemented in APIs.",
+    "gold_keywords": ["limit", "offset", "cursor-based pagination", "large datasets", "multiple items"],
+    "expected_answer": "Pagination can be implemented using limit and offset parameters or cursor-based pagination for large datasets to return multiple items efficiently.",
+    "difficulty": "medium"
+  },
+  {
+    "query": "What is the cache-aside pattern and how does it work?",
+    "gold_keywords": ["cache-aside", "loads data into cache", "cache miss", "temporary storage"],
+    "expected_answer": "The cache-aside pattern loads data into cache when a cache miss occurs, storing frequently accessed data for faster retrieval.",
+    "difficulty": "hard"
+  },
+  {
+    "query": "What are the benefits of microservices architecture?",
+    "gold_keywords": ["independent deployment", "loose coupling", "independent scaling", "microservices"],
+    "expected_answer": "Benefits include independent deployment of services, loose coupling through separate databases, and independent scaling of each service.",
+    "difficulty": "medium"
+  },
+  {
+    "query": "How are Kubernetes Pods different from Containers?",
+    "gold_keywords": ["Pods", "smallest deployable units", "containers", "instances", "Kubernetes"],
+    "expected_answer": "Pods are the smallest deployable units in Kubernetes and can contain one or more containers, while containers are instances of Docker images.",
+    "difficulty": "medium"
+  },
+  {
+    "query": "What methods prevent common web security vulnerabilities?",
+    "gold_keywords": ["SQL injection", "parameterized queries", "XSS", "input validation", "CSRF", "tokens"],
+    "expected_answer": "SQL injection is prevented with parameterized queries, XSS with input validation and output encoding, and CSRF with tokens.",
+    "difficulty": "hard"
+  },
+  {
+    "query": "What is a circuit breaker and why is it used in microservices?",
+    "gold_keywords": ["circuit breaker", "cascading failures", "failing services", "prevents requests"],
+    "expected_answer": "A circuit breaker prevents cascading failures by stopping requests to failing services, similar to an electrical circuit breaker.",
+    "difficulty": "hard"
+  },
+  {
+    "query": "How do OpenTelemetry and monitoring tools like Prometheus work together?",
+    "gold_keywords": ["OpenTelemetry", "metrics", "Prometheus", "time-series", "observability", "tracing"],
+    "expected_answer": "OpenTelemetry provides standardized APIs for metrics, logs, and traces which Prometheus collects as time-series data for monitoring and observability.",
+    "difficulty": "hard"
+  }
+]
