@@ -749,13 +749,13 @@ class HybridRetriever:
 
         retrieved_images = []
         try:
-            # Fetch images from database
-            # This assumes DB has get_images method or similar
-            cursor = self.db.cursor()
+            from .db import get_conn
             
-            # Query images from database
+            # Query all images from database
+            conn = get_conn()
+            cursor = conn.cursor()
             cursor.execute("""
-                SELECT id, caption, page, bbox, ocr_text, embedding_file 
+                SELECT id, caption, page, bbox, ocr_text 
                 FROM images 
                 LIMIT ?
             """, (top_k * 2,))
@@ -772,6 +772,7 @@ class HybridRetriever:
                     'lazy': lazy,
                 }
                 retrieved_images.append(img_dict)
+            conn.close()
                 
         except Exception as e:
             print(f"[retriever] Image retrieval error: {e}")
