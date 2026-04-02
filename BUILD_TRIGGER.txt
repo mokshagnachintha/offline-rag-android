@@ -1,0 +1,11 @@
+Build triggered on: 2026-04-03
+Workflow: V3 Build & Release APK
+Target: Generate Android APK with Qwen 3.5-2B and Nomic Embed models
+
+Key improvements in this build:
+- Enhanced license acceptance with monitoring loop
+- Removed deprecated android.sdk setting
+- Improved error handling and logging
+- Licenses created in both home and buildozer directories
+
+This file triggers GitHub Actions workflow on push to v3 branch.
