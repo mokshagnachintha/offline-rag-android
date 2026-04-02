@@ -552,12 +552,15 @@ def download_model_with_fallback(
     model_type: str = "llm",
 ) -> str:
     """
-    Download model with automatic fallback chain.
+    Download model with automatic fallback chain (synchronous wrapper).
 
     If Qwen 3.5 fails, automatically try Qwen 2.5.
     If CLIP unavailable, fallback to Nomic.
 
     Returns: The actual model key that was successfully downloaded
+    
+    Note: This is a blocking call that uses a Queue to wait for async downloads.
+    Better approach: Call download_model directly in production code.
     """
     if model_type == "llm":
         available_models = model_config.LLM_MODELS
@@ -568,40 +571,44 @@ def download_model_with_fallback(
     fallback_chain = [model_key]
     fallback_chain.extend([k for k in available_models.keys() if k != model_key])
 
-    for attempt_model in fallback_chain:
+    import queue
+    result_queue: queue.Queue = queue.Queue()
+
+    def try_download_model(attempt_model: str) -> bool:
+        """Try to download a single model and return success status."""
+        model_info = available_models[attempt_model]
+        print(f"[downloader] Attempting: {model_info['label']}")
+
+        def on_done_wrapper(success: bool, msg: str):
+            result_queue.put((success, msg, attempt_model))
+
         try:
-            model_info = available_models[attempt_model]
-            print(f"[downloader] Attempting: {model_info['label']}")
-
-            # This is a synchronous wrapper that waits for completion
-            import queue
-            result_queue: queue.Queue = queue.Queue()
-
-            def on_progress_wrapper(frac: float, text: str):
-                if on_progress:
-                    on_progress(frac, text)
-
-            def on_done_wrapper(success: bool, msg: str):
-                result_queue.put((success, msg, attempt_model))
-                if on_done:
-                    on_done(success, msg)
-
             download_model(
                 repo_id=model_info["repo_id"],
                 filename=model_info["filename"],
-                on_progress=on_progress_wrapper,
+                on_progress=on_progress,
                 on_done=on_done_wrapper,
             )
 
-            # Wait for result (with timeout)
-            success, msg, model_used = result_queue.get(timeout=3600)  # 1 hour timeout
+            # Wait for result with timeout
+            success, msg, model_used = result_queue.get(timeout=600)  # 10 min timeout per model
             if success:
                 print(f"[downloader] ✅ Successfully downloaded: {attempt_model}")
-                return attempt_model
-
+                return True
+            else:
+                print(f"[downloader] ❌ Download failed: {msg}")
+                return False
+        except queue.Empty:
+            print(f"[downloader] ⏱️ Download timeout for {attempt_model}")
+            return False
         except Exception as e:
-            print(f"[downloader] ❌ Failed ({attempt_model}): {e}, trying next...")
-            continue
+            print(f"[downloader] ❌ Exception ({attempt_model}): {e}")
+            return False
+
+    # Try each model in fallback chain
+    for attempt_model in fallback_chain:
+        if try_download_model(attempt_model):
+            return attempt_model
 
     # All failed
     raise RuntimeError(f"Could not download any model from: {fallback_chain}")
