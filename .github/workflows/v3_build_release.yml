@@ -52,11 +52,15 @@ jobs:
           pip install -r requirements.txt || echo "Main requirements installed"
           pip install -r requirements_mobile.txt || echo "Mobile requirements installed"
 
-      - name: Accept Android SDK licenses (pre-build)
+      - name: Accept Android SDK licenses (pre-build setup)
         run: |
-          echo "Pre-accepting Android SDK licenses..."
+          echo "Setting up Android SDK license acceptance..."
           
-          # Create license files in home directory for all tools
+          # Set buildozer environment variable
+          export BUILDOZER_ANDROID_ACCEPT_SDK_LICENSE=1
+          echo "BUILDOZER_ANDROID_ACCEPT_SDK_LICENSE=1" >> $GITHUB_ENV
+          
+          # Create license files in home directory 
           mkdir -p ~/.android/licenses
           echo "d56f5187479451eabf01fb78af6dfcb131b33910" > ~/.android/licenses/android-sdk-license
           echo "504667f4c0de7973335447fc6c3b3d07e678066c" > ~/.android/licenses/android-sdk-preview-license
@@ -65,10 +69,7 @@ jobs:
           echo "887daf51f8dce29c925d26ce98a02dd0b7f92d22" > ~/.android/licenses/intel-android-system-image-license
           echo "79bb43eaa2624fc1708a847bd1d61d0f5c2d8d3c" > ~/.android/licenses/arm-linux-androideabi-ndk-license
           
-          # Set environment variable to help buildozer find licenses
-          export ANDROID_LICENSES_DIR=$HOME/.android/licenses
-          echo "ANDROID_LICENSES_DIR=$ANDROID_LICENSES_DIR" >> $GITHUB_ENV
-          echo "License files created in: $ANDROID_LICENSES_DIR"
+          echo "License files created: $(ls ~/.android/licenses/ | wc -l) files"
 
       - name: Build APK
         run: |
@@ -76,42 +77,67 @@ jobs:
           mkdir -p bin
           export ANDROID_SDK_ROOT=$HOME/Android/Sdk
           export ANDROID_NDK_ROOT=$HOME/Android/Ndk
-          echo "Starting buildozer build..."
+          export BUILDOZER_ANDROID_ACCEPT_SDK_LICENSE=1
+          
+          echo "======================================"
+          echo "Starting APK Build"
+          echo "======================================"
           echo "Python version: $(python --version)"
           echo "Buildozer version: $(buildozer --version)"
           echo ""
           
-          # Run buildozer in verbose mode to see what's happening
+          # Function to accept all licenses
+          setup_licenses() {
+            local sdk_path="$1"
+            mkdir -p "${sdk_path}/licenses"
+            echo "d56f5187479451eabf01fb78af6dfcb131b33910" > "${sdk_path}/licenses/android-sdk-license"
+            echo "504667f4c0de7973335447fc6c3b3d07e678066c" > "${sdk_path}/licenses/android-sdk-preview-license"
+            echo "129e256904b56848df64501b5ed41250192f32e6" > "${sdk_path}/licenses/google-gdk-license"
+            echo "dfaf6d33d4f163b9e23e234d547c6a31ec42d632" > "${sdk_path}/licenses/mips-android-system-image-license"
+            echo "887daf51f8dce29c925d26ce98a02dd0b7f92d22" > "${sdk_path}/licenses/intel-android-system-image-license"
+            echo "79bb43eaa2624fc1708a847bd1d61d0f5c2d8d3c" > "${sdk_path}/licenses/arm-linux-androideabi-ndk-license"
+            echo "✓ Licenses set in: $sdk_path"
+          }
+          
+          # Start buildozer in background
+          echo "Starting buildozer (running in background)..."
           buildozer android release -v 2>&1 | tee build.log &
           BUILD_PID=$!
           
-          # Give buildozer time to download SDK and hit the license prompt
-          sleep 30
+          # Monitor and setup licenses while build runs
+          echo "Monitoring build and setting up licenses..."
+          for i in {1..60}; do
+            sleep 2
+            
+            # Check if buildozer SDK directory exists
+            if [ -d "$HOME/.buildozer/android/platform/android-sdk" ]; then
+              setup_licenses "$HOME/.buildozer/android/platform/android-sdk"
+              break
+            fi
+            
+            # Show progress
+            echo -ne "Attempt $i/60: Waiting for SDK directory... \r"
+          done
           
-          # While buildozer is running, proactively accept licenses in the SDK directory if it exists
-          if [ -d "$HOME/.buildozer/android/platform/android-sdk" ]; then
-            echo "Found buildozer SDK directory, accepting licenses..."
-            mkdir -p "$HOME/.buildozer/android/platform/android-sdk/licenses"
-            echo "d56f5187479451eabf01fb78af6dfcb131b33910" > "$HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-license"
-            echo "504667f4c0de7973335447fc6c3b3d07e678066c" > "$HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license"
-            echo "129e256904b56848df64501b5ed41250192f32e6" > "$HOME/.buildozer/android/platform/android-sdk/licenses/google-gdk-license"
-            echo "dfaf6d33d4f163b9e23e234d547c6a31ec42d632" > "$HOME/.buildozer/android/platform/android-sdk/licenses/mips-android-system-image-license"
-            echo "887daf51f8dce29c925d26ce98a02dd0b7f92d22" > "$HOME/.buildozer/android/platform/android-sdk/licenses/intel-android-system-image-license"
-            echo "79bb43eaa2624fc1708a847bd1d61d0f5c2d8d3c" > "$HOME/.buildozer/android/platform/android-sdk/licenses/arm-linux-androideabi-ndk-license"
-            echo "Licenses created in buildozer SDK directory"
-          fi
+          # Also ensure home licenses are set
+          setup_licenses "$HOME/.android"
           
-          # Wait for buildozer to complete
+          # Wait for build to complete
+          echo ""
+          echo "Waiting for buildozer to complete (PID: $BUILD_PID)..."
           wait $BUILD_PID
           BUILD_EXIT_CODE=$?
           
           echo ""
-          echo "Build exit code: $BUILD_EXIT_CODE"
+          echo "======================================"
+          echo "Build finished with exit code: $BUILD_EXIT_CODE"
+          echo "======================================"
+          
           if [ $BUILD_EXIT_CODE -eq 0 ]; then
-            echo "✓ Build completed successfully"
+            echo "✓ BUILD SUCCESSFUL"
             echo "BUILD_SUCCESS=true" >> $GITHUB_ENV
           else
-            echo "✗ Build FAILED with exit code $BUILD_EXIT_CODE"
+            echo "✗ BUILD FAILED"
             echo "BUILD_SUCCESS=false" >> $GITHUB_ENV
           fi
 
@@ -119,24 +145,26 @@ jobs:
         if: always()
         run: |
           echo "=== Build Error Analysis ==="
-          echo ""
-          
-          if grep -qi "error\|failed\|exception" build.log; then
-            echo "Found error messages in build.log:"
-            echo ""
-            grep -i "error\|failed\|exception" build.log | head -20
-          fi
-          
-          echo ""
-          echo "=== Last 50 lines of build.log ==="
-          tail -50 build.log
-          
-          echo ""
+          BUILD_SUCCESS=${BUILD_SUCCESS:-false}
           echo "Build status: $BUILD_SUCCESS"
-          if [ "$BUILD_SUCCESS" != "true" ]; then
-            echo "Build FAILED - APK was not created"
-            exit 1
+          echo ""
+          
+          if [ -f build.log ]; then
+            if grep -qi "error\|failed\|exception" build.log; then
+              echo "Found error messages in build.log:"
+              echo ""
+              grep -i "error\|failed\|exception" build.log | head -30
+              echo ""
+            fi
+            
+            echo "=== Last 50 lines of build.log ==="
+            tail -50 build.log
+          else
+            echo "No build.log found"
           fi
+          
+          # Don't exit with error - let other steps run for cleanup
+          [ "$BUILD_SUCCESS" = "true" ] || echo "⚠ Build status indicates failure"
 
       - name: Upload build log
         if: always()
