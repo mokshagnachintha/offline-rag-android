@@ -55,16 +55,31 @@ jobs:
       - name: Build APK
         run: |
           rm -rf .buildozer bin dist 2>/dev/null || true
-          buildozer android release -v
+          mkdir -p bin
+          buildozer android release -v 2>&1 | tee build.log
+          echo "Build completed"
 
       - name: Check APK output
         run: |
-          if [ -f "bin/orag-"*"-release-unsigned.apk" ]; then
-            ls -lh bin/orag-*-release-unsigned.apk
+          echo "Checking bin directory..."
+          if [ -d "bin" ]; then
+            ls -lha bin/
           else
-            echo "Build failed - APK not found in bin/"
+            echo "ERROR: bin directory not found"
             exit 1
           fi
+          
+          APK_COUNT=$(find bin -name "*.apk" 2>/dev/null | wc -l)
+          echo "Found $APK_COUNT APK file(s)"
+          
+          if [ $APK_COUNT -eq 0 ]; then
+            echo "ERROR: No APK files found"
+            echo "Checking buildozer output..."
+            grep -i "error\|failed" build.log || echo "No errors in log"
+            exit 1
+          fi
+          
+          ls -lh bin/*.apk
 
       - name: Create GitHub Release
         if: success()
@@ -72,7 +87,7 @@ jobs:
         with:
           tag_name: v3-build-${{ github.run_number }}
           name: V3 Build #${{ github.run_number }}
-          files: bin/orag-*-release-unsigned.apk
+          files: bin/*.apk
           body: |
             # O-RAG v3 - Automated APK Build
             
