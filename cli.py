@@ -20,7 +20,7 @@ init_db()
 
 print("Indexing documents to Database...")
 doc_id = insert_document(Path(doc_path).name, doc_path)
-chunks = process_document(doc_path)
+chunks, images = process_document(doc_path)
 insert_chunks(doc_id, chunks)
 update_doc_chunk_count(doc_id, len(chunks))
 
