@@ -688,3 +688,94 @@ class HybridRetriever:
         if self.enable_cache and self._cache is not None:
             self._cache.clear()
             print("[retriever] Query cache cleared")
+
+    # ─────────────────────────────────────────────────────────────────── #
+    #  Multimodal Query Support (Qwen 3.5 + CLIP)                         #
+    # ─────────────────────────────────────────────────────────────────── #
+
+    def query_multimodal(
+        self,
+        text: str,
+        include_images: bool = True,
+        top_k: int = None,
+    ) -> dict:
+        """
+        Multimodal query: retrieve both text chunks AND images.
+
+        Returns: {
+            'chunks': [(text, score), ...],
+            'images': [{'path': ..., 'caption': ..., 'score': ...}, ...],
+            'explanation': "Why these results"
+        }
+        """
+        if self.is_empty():
+            return {'chunks': [], 'images': [], 'explanation': 'No documents.'}
+
+        # Standard text retrieval
+        text_results = self.query(text, top_k=top_k)
+
+        # Image retrieval (if multimodal embeddings enabled + query asks for images)
+        images = []
+        if include_images and self._has_image_keywords(text):
+            images = self.retrieve_images(text, top_k=3, lazy=True)
+
+        return {
+            'chunks': text_results,
+            'images': images,
+            'explanation': f"Retrieved {len(text_results)} text chunks + {len(images)} images"
+        }
+
+    def _has_image_keywords(self, query_text: str) -> bool:
+        """Check if query is asking for visual content."""
+        image_keywords = [
+            'image', 'diagram', 'chart', 'photo', 'picture', 'show',
+            'display', 'visualiz', 'figure', 'graph', 'illustration'
+        ]
+        text_lower = query_text.lower()
+        return any(kw in text_lower for kw in image_keywords)
+
+    def retrieve_images(
+        self,
+        query_text: str,
+        top_k: int = 3,
+        lazy: bool = True,
+    ) -> list:
+        """Retrieve images relevant to query."""
+        if not self._has_image_keywords(query_text):
+            return []
+
+        # Get top text chunks (reuse existing logic)
+        text_results = self.query(query_text, top_k=min(5, top_k * 2))
+
+        retrieved_images = []
+        try:
+            # Fetch images from database
+            # This assumes DB has get_images method or similar
+            cursor = self.db.cursor()
+            
+            # Query images from database
+            cursor.execute("""
+                SELECT id, caption, page, bbox, ocr_text, embedding_file 
+                FROM images 
+                LIMIT ?
+            """, (top_k * 2,))
+            
+            rows = cursor.fetchall()
+            for row in rows:
+                img_dict = {
+                    'id': row[0],
+                    'caption': row[1] or 'Unknown',
+                    'page': row[2],
+                    'bbox': row[3],
+                    'ocr_text': row[4],
+                    'relevance_score': 0.5,  # Default relevance
+                    'lazy': lazy,
+                }
+                retrieved_images.append(img_dict)
+                
+        except Exception as e:
+            print(f"[retriever] Image retrieval error: {e}")
+
+        # Sort by relevance and return top_k
+        retrieved_images.sort(key=lambda x: x.get('relevance_score', 0), reverse=True)
+        return retrieved_images[:top_k]

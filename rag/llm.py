@@ -27,6 +27,8 @@ import zipfile
 from pathlib import Path
 from typing import Callable, Optional
 
+from . import model_config
+
 # App root: rag/llm.py → ../..
 _APP_ROOT = Path(__file__).resolve().parent.parent
 
@@ -84,6 +86,10 @@ _ANDROID_BINARY_ERROR: str = ""            # stores last extraction failure reas
 _NOMIC_PORT  = 8083         # Nomic embedding server
 _NOMIC_PROC  = None
 _NOMIC_LOCK  = threading.Lock()
+
+_CLIP_PORT   = 8084         # CLIP multimodal embedding server
+_CLIP_PROC   = None
+_CLIP_LOCK   = threading.Lock()
 
 
 def _bin_dir() -> Path:
@@ -394,6 +400,87 @@ def stop_nomic_server() -> None:
                 except Exception:
                     pass
             _NOMIC_PROC = None
+
+
+def start_clip_server(model_path: str,
+                      n_ctx: int = 128,
+                      n_threads: int = 0) -> bool:
+    """
+    Start a *third* llama-server process on _CLIP_PORT (8084) loaded
+    with the CLIP multimodal embedding model. No-op if already running.
+    Returns True when the server is ready.
+    """
+    if n_threads == 0:
+        n_threads = _optimal_threads()
+    global _CLIP_PROC
+    exe = _server_exe()
+    if exe is None:
+        print("[clip-server] no llama-server binary available")
+        return False
+    with _CLIP_LOCK:
+        if _CLIP_PROC is not None and _CLIP_PROC.poll() is None:
+            return True   # already running
+        cmd = [
+            str(exe),
+            "--model",         model_path,
+            "--ctx-size",      str(n_ctx),
+            "--threads",       str(n_threads),
+            "--threads-batch", str(n_threads),
+            "--port",          str(_CLIP_PORT),
+            "--host",          "127.0.0.1",
+            "--embedding",
+            "--flash-attn",    "on",
+            "--cache-type-k",  "q8_0",
+            "--cache-type-v",  "q8_0",
+        ]
+        print(f"[clip-server] Starting on port {_CLIP_PORT}")
+        print(f"  Model: {Path(model_path).name}")
+        cf = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+        log_file = None
+        priv = os.environ.get("ANDROID_PRIVATE", "")
+        if priv:
+            try:
+                log_file = open(os.path.join(priv, "clip_server.log"), "wb")
+            except Exception:
+                pass
+        try:
+            _CLIP_PROC = subprocess.Popen(
+                cmd,
+                stdout=log_file if log_file else subprocess.DEVNULL,
+                stderr=log_file if log_file else subprocess.DEVNULL,
+                creationflags=cf,
+            )
+        except Exception as exc:
+            if log_file:
+                log_file.close()
+            print(f"[clip-server] Launch failed: {exc}")
+            return False
+    ready = _wait_for_server(_CLIP_PORT, timeout=120)
+    if log_file:
+        try:
+            log_file.close()
+        except Exception:
+            pass
+    if ready:
+        print("[clip-server] Ready.")
+    else:
+        print("[clip-server] Timed out / crashed.")
+    return ready
+
+
+def stop_clip_server() -> None:
+    global _CLIP_PROC
+    with _CLIP_LOCK:
+        if _CLIP_PROC is not None:
+            try:
+                _CLIP_PROC.terminate()
+                _CLIP_PROC.wait(timeout=5)
+            except Exception:
+                try:
+                    _CLIP_PROC.kill()
+                except Exception:
+                    pass
+            _CLIP_PROC = None
 
 
 def get_embedding(text: str) -> "list[float] | None":

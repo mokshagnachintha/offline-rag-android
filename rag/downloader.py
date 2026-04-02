@@ -11,6 +11,8 @@ import threading
 from pathlib import Path
 from typing import Callable, Optional
 
+from . import model_config
+
 
 # ------------------------------------------------------------------ #
 #  Catalogue of available Mobile RAG GGUF models                     #
@@ -516,3 +518,90 @@ class DownloadManager:
                 for name in self.downloads
                 if self.downloads[name] is not None
             }
+
+
+# ─────────────────────────────────────────────────────────────────── #
+#  Model Selection and Fallback Functions (Qwen 3.5 Support)          #
+# ─────────────────────────────────────────────────────────────────── #
+
+def select_model_for_device(available_memory_mb: int = 4096) -> dict:
+    """Auto-select optimal models based on device memory."""
+    # Detect device class
+    if os.environ.get("ANDROID_PRIVATE"):
+        if available_memory_mb >= 6000:
+            return model_config.DEVICE_PRESETS["6gb-mobile"]
+        else:
+            return model_config.DEVICE_PRESETS["4gb-mobile"]
+    else:
+        # Desktop
+        return model_config.DEVICE_PRESETS.get(
+            "8gb-laptop",
+            model_config.DEVICE_PRESETS["4gb-mobile"]
+        )
+
+
+def get_fallback_llm_models() -> list[str]:
+    """Return LLM fallback chain: [primary, fallback1, fallback2, ...]"""
+    return list(model_config.LLM_MODELS.keys())
+
+
+def download_model_with_fallback(
+    model_key: str,
+    on_progress: Optional[Callable[[float, str], None]] = None,
+    on_done: Optional[Callable[[bool, str], None]] = None,
+    model_type: str = "llm",
+) -> str:
+    """
+    Download model with automatic fallback chain.
+
+    If Qwen 3.5 fails, automatically try Qwen 2.5.
+    If CLIP unavailable, fallback to Nomic.
+
+    Returns: The actual model key that was successfully downloaded
+    """
+    if model_type == "llm":
+        available_models = model_config.LLM_MODELS
+    else:
+        available_models = model_config.EMBEDDING_MODELS
+
+    # Create fallback chain: primary + others
+    fallback_chain = [model_key]
+    fallback_chain.extend([k for k in available_models.keys() if k != model_key])
+
+    for attempt_model in fallback_chain:
+        try:
+            model_info = available_models[attempt_model]
+            print(f"[downloader] Attempting: {model_info['label']}")
+
+            # This is a synchronous wrapper that waits for completion
+            import queue
+            result_queue: queue.Queue = queue.Queue()
+
+            def on_progress_wrapper(frac: float, text: str):
+                if on_progress:
+                    on_progress(frac, text)
+
+            def on_done_wrapper(success: bool, msg: str):
+                result_queue.put((success, msg, attempt_model))
+                if on_done:
+                    on_done(success, msg)
+
+            download_model(
+                repo_id=model_info["repo_id"],
+                filename=model_info["filename"],
+                on_progress=on_progress_wrapper,
+                on_done=on_done_wrapper,
+            )
+
+            # Wait for result (with timeout)
+            success, msg, model_used = result_queue.get(timeout=3600)  # 1 hour timeout
+            if success:
+                print(f"[downloader] ✅ Successfully downloaded: {attempt_model}")
+                return attempt_model
+
+        except Exception as e:
+            print(f"[downloader] ❌ Failed ({attempt_model}): {e}, trying next...")
+            continue
+
+    # All failed
+    raise RuntimeError(f"Could not download any model from: {fallback_chain}")

@@ -16,6 +16,7 @@ from .retriever import HybridRetriever
 from .llm      import llm, build_rag_prompt, build_direct_prompt, list_available_models
 from .downloader import auto_download_default, model_dest_path, QWEN_MODEL, NOMIC_MODEL
 from .memory_manager import get_memory_manager, MemoryAwareRetriever
+from .model_config import get_device_preset, model_is_multimodal, LLM_MODELS, EMBEDDING_MODELS
 
 
 # Module-level retriever (shared across the whole app)
@@ -267,3 +268,119 @@ def ask(
                 on_done(False, f"Error during inference: {e}")
 
     threading.Thread(target=_run, daemon=True).start()
+
+
+# ─────────────────────────────────────────────────────────────────── #
+#  Device Configuration and Multimodal Support (Qwen 3.5 + CLIP)      #
+# ─────────────────────────────────────────────────────────────────── #
+
+def configure_rag_for_device(device_preset: str = "4gb-mobile") -> dict:
+    """
+    Auto-configure RAG system for current device.
+    
+    Returns: {
+        'llm': model_key,
+        'embedding': model_key,
+        'multimodal': bool,
+    }
+    """
+    # Import downloader dynamically to avoid circular imports
+    from .downloader import download_model_with_fallback
+    
+    # Get recommended models
+    preset = get_device_preset(device_preset)
+    
+    print(f"[pipeline] Configuring for device preset: {device_preset}")
+    print(f"  LLM: {preset['llm']}")
+    print(f"  Embedding: {preset['embedding']}")
+    
+    # Download with fallback
+    try:
+        actual_llm = download_model_with_fallback(preset['llm'], model_type="llm")
+    except Exception as e:
+        print(f"[pipeline] LLM download failed: {e}")
+        actual_llm = preset['llm']
+    
+    try:
+        actual_embedding = download_model_with_fallback(preset['embedding'], model_type="embedding")
+    except Exception as e:
+        print(f"[pipeline] Embedding download failed: {e}")
+        actual_embedding = preset['embedding']
+    
+    # Load models
+    llm_path = model_dest_path(LLM_MODELS[actual_llm]["filename"])
+    embedding_path = model_dest_path(EMBEDDING_MODELS[actual_embedding]["filename"])
+    
+    print(f"[pipeline] Loading LLM: {llm_path}")
+    llm.load(llm_path)
+    
+    print(f"[pipeline] Loading embedding: {embedding_path}")
+    retriever._embedding_model_key = actual_embedding
+    
+    return {
+        'llm': actual_llm,
+        'embedding': actual_embedding,
+        'multimodal': model_is_multimodal(actual_embedding),
+    }
+
+
+def ask_multimodal(
+    question: str,
+    stream_cb: Optional[Callable[[str], None]] = None,
+    on_done: Optional[Callable[[bool, str], None]] = None,
+) -> None:
+    """
+    Query RAG with multimodal support (text + images).
+    Runs in background thread.
+    """
+    def _run():
+        try:
+            if not llm.is_loaded():
+                if on_done:
+                    on_done(False, "LLM not loaded")
+                return
+            
+            # Multimodal retrieval
+            results = retriever.query_multimodal(question, include_images=True, top_k=5)
+            
+            # Build prompt with text + image captions
+            context_chunks = [text for text, _ in results['chunks']]
+            image_captions = [img.get('caption', 'Unknown') for img in results['images']]
+            
+            prompt = build_rag_prompt_multimodal(
+                context_chunks,
+                image_captions,
+                question
+            )
+            
+            answer = llm.generate(prompt, stream_cb=stream_cb)
+            if on_done:
+                on_done(True, answer)
+        except Exception as e:
+            if on_done:
+                on_done(False, f"Error: {e}")
+    
+    threading.Thread(target=_run, daemon=True).start()
+
+
+def build_rag_prompt_multimodal(
+    chunks: list[str],
+    image_captions: list[str],
+    question: str,
+) -> str:
+    """Build prompt including image context."""
+    context = "\n".join(chunks)
+    if image_captions:
+        vision_context = "\n".join([f"[Image: {c}]" for c in image_captions])
+        return f"{context}\n\nVisual content:\n{vision_context}\n\nQuestion: {question}"
+    return f"{context}\n\nQuestion: {question}"
+
+
+def get_rag_configuration() -> dict:
+    """Get current RAG setup information."""
+    return {
+        'llm_loaded': llm.is_loaded(),
+        'llm_backend': llm._backend if hasattr(llm, '_backend') else 'unknown',
+        'retriever_ready': not retriever.is_empty(),
+        'multimodal_supported': hasattr(retriever, 'query_multimodal'),
+    }
