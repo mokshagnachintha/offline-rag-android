@@ -137,9 +137,9 @@ jobs:
           - 🤖 Latest Qwen 3.5 AI model
 
           **Installation:**
-          \`\`\`bash
+          ```bash
           adb install orag-*.apk
-          \`\`\`
+          ```
 
           **First Launch:**
           1. App opens InitScreen
@@ -164,13 +164,14 @@ jobs:
       - name: Create Release
         if: success()
         uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v3-${{ steps.commit.outputs.build_date }}
           name: V3 Build - ${{ steps.commit.outputs.build_date }}
           body_path: RELEASE_NOTES.md
-          files: bin/orag-*.apk
+          files: |
+            bin/orag-*.apk
           draft: false
           prerelease: false
           target_commitish: v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
