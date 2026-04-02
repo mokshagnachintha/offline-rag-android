@@ -59,46 +59,45 @@ jobs:
           export ANDROID_SDK_ROOT=$HOME/Android/Sdk
           export ANDROID_NDK_ROOT=$HOME/Android/Ndk
           echo "Starting buildozer build..."
-          buildozer android release -v 2>&1 | tee build.log || BUILD_FAILED=1
-          if [ -z "$BUILD_FAILED" ]; then
+          echo "Python version: $(python --version)"
+          echo "Buildozer version: $(buildozer --version)"
+          echo ""
+          
+          buildozer android release -v 2>&1 | tee build.log
+          BUILD_EXIT_CODE=$?
+          
+          echo ""
+          echo "Build exit code: $BUILD_EXIT_CODE"
+          if [ $BUILD_EXIT_CODE -eq 0 ]; then
             echo "✓ Build completed successfully"
+            echo "BUILD_SUCCESS=true" >> $GITHUB_ENV
           else
-            echo "✗ Build failed, see details above"
+            echo "✗ Build FAILED with exit code $BUILD_EXIT_CODE"
+            echo "BUILD_SUCCESS=false" >> $GITHUB_ENV
           fi
-          echo "BUILD_FAILED=$BUILD_FAILED" >> $GITHUB_ENV
 
-      - name: Check APK output
+      - name: Analyze Build Errors
         if: always()
         run: |
-          echo "=== Build Diagnostics ===" 
-          echo "Checking bin directory..."
-          if [ -d "bin" ]; then
-            echo "✓ bin directory exists"
-            ls -lha bin/ || echo "Failed to list bin"
-          else
-            echo "✗ bin directory not found"
+          echo "=== Build Error Analysis ==="
+          echo ""
+          
+          if grep -qi "error\|failed\|exception" build.log; then
+            echo "Found error messages in build.log:"
+            echo ""
+            grep -i "error\|failed\|exception" build.log | head -20
           fi
           
           echo ""
-          echo "Searching for APK files..."
-          APK_COUNT=$(find . -name "*.apk" -type f 2>/dev/null | wc -l)
-          echo "Found $APK_COUNT APK file(s) total"
+          echo "=== Last 50 lines of build.log ==="
+          tail -50 build.log
           
-          if [ $APK_COUNT -gt 0 ]; then
-            echo "✓ APK files found:"
-            find . -name "*.apk" -type f 2>/dev/null | head -10
-            
-            # Move all APK files to bin if not already there
-            find . -name "*.apk" -type f ! -path "./bin/*" -exec cp {} bin/ \;
-          else
-            echo "✗ No APK files found anywhere"
-            echo ""
-            echo "Last 30 lines of build.log:"
-            tail -30 build.log || echo "No build.log found"
+          echo ""
+          echo "Build status: $BUILD_SUCCESS"
+          if [ "$BUILD_SUCCESS" != "true" ]; then
+            echo "Build FAILED - APK was not created"
+            exit 1
           fi
-          
-          # Final check
-          ls -lh bin/*.apk 2>/dev/null || echo "No APK files in bin/"
 
       - name: Upload build log
         if: always()
@@ -110,7 +109,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Create GitHub Release
-        if: success()
+        if: env.BUILD_SUCCESS == 'true'
         uses: softprops/action-gh-release@v1
         continue-on-error: true
         with:
@@ -139,7 +138,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Locate APK file
-        if: always()
+        if: env.BUILD_SUCCESS == 'true'
         run: |
           echo "=== Searching for APK in all possible locations ==="
           echo ""
@@ -171,7 +170,7 @@ jobs:
           echo "Total APKs found: $APK_FINAL_COUNT"
 
       - name: Upload APK as artifact
-        if: always()
+        if: env.BUILD_SUCCESS == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: orag-apk-${{ github.run_number }}
@@ -192,18 +191,19 @@ jobs:
           echo "Branch: v3"
           echo ""
           
-          if [ "$APK_FINAL_COUNT" -gt 0 ]; then
-            echo "✓ APK Build Status: SUCCESS"
-            echo "Artifact Count: $APK_FINAL_COUNT"
-            echo ""
-            echo "Downloads:"
-            ls -lh apk-final/*.apk 2>/dev/null | awk '{print "  ", $9, "(" $5 ")"}'
-            echo ""
-            echo "✓ Download from: Actions → orag-apk-${{ github.run_number }} → Artifacts"
+          if [ "$BUILD_SUCCESS" == "true" ]; then
+            echo "✓ BUILD SUCCESSFUL"
+            if [ "$APK_FINAL_COUNT" -gt 0 ]; then
+              echo "✓ APK Count: $APK_FINAL_COUNT"
+              echo ""
+              echo "Files:"
+              ls -lh apk-final/*.apk 2>/dev/null | awk '{print "  ", $9, "(" $5 ")"}'
+              echo ""
+              echo "✓ Download from: Actions → orag-apk-${{ github.run_number }} → Artifacts"
+            else
+              echo "⚠ Build succeeded but no APK found"
+            fi
           else
-            echo "⚠ APK Build Status: INCOMPLETE"
-            echo "No APK files were created or found"
-            echo ""
-            echo "Debug - checking for APK files anywhere:"
-            find . -name "*.apk" -type f 2>/dev/null | wc -l | xargs echo "Total APK count:"
+            echo "✗ BUILD FAILED - No APK created"
+            echo "Check build-logs-${{ github.run_number }} artifact for details"
           fi
