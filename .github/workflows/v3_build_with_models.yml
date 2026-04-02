@@ -111,13 +111,17 @@ jobs:
 
       - name: Generate release notes
         id: release_notes
+        env:
+          BUILD_DATE: ${{ steps.commit.outputs.build_date }}
+          COMMIT_HASH: ${{ steps.commit.outputs.commit_hash }}
+          COMMIT_MESSAGE: ${{ steps.commit.outputs.commit_message }}
         run: |
-          cat > RELEASE_NOTES.md << 'EOF'
-          # O-RAG v3 Build - ${{ steps.commit.outputs.build_date }}
+          cat > RELEASE_NOTES.md << EOF
+          # O-RAG v3 Build - ${BUILD_DATE}
 
           **Build Configuration:**
           - Branch: v3
-          - Commit: ${{ steps.commit.outputs.commit_hash }}
+          - Commit: ${COMMIT_HASH}
           - Model Download: First Launch (On-Demand)
           
           **Models (Auto-Downloaded on First Launch):**
@@ -133,9 +137,9 @@ jobs:
           - 🤖 Latest Qwen 3.5 AI model
 
           **Installation:**
-          ```bash
+          \`\`\`bash
           adb install orag-*.apk
-          ```
+          \`\`\`
 
           **First Launch:**
           1. App opens InitScreen
@@ -151,9 +155,9 @@ jobs:
           - ~1.4 GB free storage for models
 
           **Build Details:**
-          - Commit: ${{ steps.commit.outputs.commit_message }}
+          - Commit: ${COMMIT_MESSAGE}
           - Engine: llama.cpp Python with Rust optimizations
-          - Build Date: ${{ steps.commit.outputs.build_date }}
+          - Build Date: ${BUILD_DATE}
           EOF
           cat RELEASE_NOTES.md
 
@@ -161,7 +165,7 @@ jobs:
         if: success()
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v3-build-${{ steps.commit.outputs.build_date }}
+          tag_name: v3-${{ steps.commit.outputs.build_date }}
           name: V3 Build - ${{ steps.commit.outputs.build_date }}
           body_path: RELEASE_NOTES.md
           files: bin/orag-*.apk
