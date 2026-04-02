@@ -52,6 +52,15 @@ jobs:
           pip install -r requirements.txt || echo "Main requirements installed"
           pip install -r requirements_mobile.txt || echo "Mobile requirements installed"
 
+      - name: Accept Android SDK licenses
+        run: |
+          echo "Preparing to accept Android SDK licenses..."
+          mkdir -p ~/.android
+          # Accept all Android SDK licenses automatically
+          yes | $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --licenses 2>/dev/null || {
+            echo "Note: License acceptance attempted (may not be initialized yet)"
+          }
+
       - name: Build APK
         run: |
           rm -rf .buildozer bin dist 2>/dev/null || true
@@ -62,6 +71,10 @@ jobs:
           echo "Python version: $(python --version)"
           echo "Buildozer version: $(buildozer --version)"
           echo ""
+          
+          # Try to accept licenses one more time before build  
+          mkdir -p ~/.android
+          yes | $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --licenses 2>/dev/null || true
           
           buildozer android release -v 2>&1 | tee build.log
           BUILD_EXIT_CODE=$?
