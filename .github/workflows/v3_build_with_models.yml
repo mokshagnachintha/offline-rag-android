@@ -164,8 +164,6 @@ jobs:
       - name: Create Release
         if: success()
         uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v3-${{ steps.commit.outputs.build_date }}
           name: V3 Build - ${{ steps.commit.outputs.build_date }}
@@ -175,3 +173,5 @@ jobs:
           draft: false
           prerelease: false
           target_commitish: v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
