@@ -168,8 +168,7 @@ jobs:
           tag_name: v3-${{ steps.commit.outputs.build_date }}
           name: V3 Build - ${{ steps.commit.outputs.build_date }}
           body_path: RELEASE_NOTES.md
-          files: |
-            bin/orag-*.apk
+          files: bin/orag-*.apk
           draft: false
           prerelease: false
           target_commitish: v3
