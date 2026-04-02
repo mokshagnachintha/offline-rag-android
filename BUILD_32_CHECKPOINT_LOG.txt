@@ -1,0 +1,105 @@
+# BUILD #32 CHECKPOINT TRACKING
+# Real-time monitoring of O-RAG Android build
+
+Build Status: IN PROGRESS ⏳
+Triggered: 2026-04-03 00:05:02 IST
+Current: 2026-04-03 00:08:55 IST
+Elapsed: 3 min 53 sec
+Est. Complete: 2026-04-03 02:15:00 IST (in ~2h 6min)
+
+## Current Phase: SETUP
+Expected: Python 3.11, JDK 17, buildozer installation
+Status: ✓ Should be in progress
+
+## Critical Workflow Improvements (Deployed)
+1. ✓ License monitoring loop (polls every 2s)
+2. ✓ Dual-location license creation
+3. ✓ Environment variable persistence
+4. ✓ Parallel buildozer + license setup
+5. ✓ Better error handling
+
+## Checkpoints to Monitor
+
+### Checkpoint 1: Setup Complete (T+15min)
+Expected time: 00:20 IST
+Current: Behind target
+What to check:
+  - Workflow shows progress (not stuck on first step)
+  - No syntax errors in workflow
+  - Dependencies installing
+Action if delayed:
+  - Check GitHub Actions workflow for errors
+  - Look for permission or network issues
+
+### Checkpoint 2: License Phase (T+30min)
+Expected time: 00:35 IST
+What to check:
+  - buildozer starting
+  - SDK directory creation detected
+  - License files successfully created in both locations
+  - No "Accept license?" prompts blocking build
+Action if delayed or blocked:
+  - Check build.log for license-related text
+  - Verify monitoring loop detected SDK directory
+  - If license fails again: Implement additional retry logic
+
+### Checkpoint 3: Build Phase (T+80min)
+Expected time: 01:25 IST
+What to check:
+  - NDK and platform-tools downloaded
+  - Python 3.11 for ARM64 being compiled
+  - Cython extensions building
+  - Build percentage progressing (10%, 20%,... 90%, 100%)
+Action if timeout:
+  - Extend timeout in workflow
+  - Check memory usage (may need to reduce JVM heap)
+  - Monitor CPU/disk space availability
+
+### Checkpoint 4: Final Phase (T+115min)
+Expected time: 02:00 IST
+What to check:
+  - Python compilation completing
+  - APK assembly starting
+  - Models being packaged
+  - "Creating APK" messages visible
+Action if stalled:
+  - Check build.log tail for specific errors
+  - Investigate if APK assembly process crashed
+
+### Checkpoint 5: Completion (T+165min)
+Expected time: 02:10 IST
+What to check:
+  - Workflow shows green checkmark
+  - APK generated successfully
+  - Artifact upload starting
+  - File appears in GitHub Actions artifacts
+Action on success:
+  - Download APK
+  - Verify size (50-200 MB)
+  - Test installation if possible
+
+## If Build Fails
+
+1. Click workflow on GitHub Actions
+2. Scroll to "Analyze Build Errors"  
+3. Identify error category:
+   a) License: Already has monitoring loop - check logs
+   b) Memory: Reduce JVM heap in workflow
+   c) Timeout: Extend build timeout
+   d) Compilation: Check Python/tool version compatibility
+4. Fix in v3_build_release.yml
+5. Push to v3 (retriggers build automatically)
+6. Monitor from Checkpoint 1 again
+
+## Files Created for Monitoring
+
+- BUILD_TRACKING_32.md - Build metadata
+- BUILD_32_MONITORING_PLAN.md - Detailed checkpoint plan
+- check_build_status.ps1 - PowerShell status checker
+- BUILD_32_CHECKPOINT_LOG.txt - This file
+
+## Next Action
+
+Monitor checkpoint 1 completion at T+15min (00:20 IST)
+Current: T+4min
+Remaining to checkpoint 1: ~11 minutes
