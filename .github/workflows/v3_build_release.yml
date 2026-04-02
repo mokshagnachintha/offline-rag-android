@@ -85,9 +85,10 @@ jobs:
         if: success()
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v3-build-${{ github.run_number }}
+          tag_name: v3-build-${{ github.run_number }}-${{ github.run_attempt }}
           name: V3 Build #${{ github.run_number }}
           files: bin/*.apk
+          generate_release_notes: false
           body: |
             # O-RAG v3 - Automated APK Build
             
@@ -104,5 +105,15 @@ jobs:
             App will automatically download AI models (~5-10 min), then operates fully offline.
           draft: false
           prerelease: false
+          fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload APK as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-build-${{ github.run_number }}
+          path: bin/*.apk
+          retention-days: 30
+          if-no-files-found: ignore
