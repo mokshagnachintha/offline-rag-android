@@ -11,31 +11,9 @@ env:
   BUILDOZER_LOG_LEVEL: 2
 
 jobs:
-  verify:
+  build:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip setuptools wheel
-          pip install -r requirements.txt || echo "requirements.txt not found"
-
-      - name: Python syntax check
-        run: |
-          python -m py_compile main.py cli.py
-          find . -name "*.py" -not -path "./.venv/*" -not -path "./.buildozer/*" -not -path "./.git/*" | head -50 | xargs python -m py_compile
-
-  build-apk:
-    needs: verify
-    runs-on: ubuntu-latest
+    timeout-minutes: 180
     permissions:
       contents: write
     
@@ -45,12 +23,10 @@ jobs:
           ref: v3
           fetch-depth: 0
 
-      - name: Get commit info
-        id: commit
-        run: |
-          echo "hash=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-          echo "message=$(git log -1 --format=%B)" >> $GITHUB_OUTPUT
-          echo "date=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_OUTPUT
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -58,273 +34,60 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
       - name: Install system dependencies
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends git zip unzip ninja-build autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev wget clang
+          sudo apt-get update
+          sudo apt-get install -y \
+            git zip unzip autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev \
+            cmake libffi-dev libssl-dev libpng-dev
 
       - name: Install Python build tools
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install "cython==0.29.37" buildozer pycryptodome
-          pip install -r requirements_mobile.txt 2>/dev/null || pip install -r requirements.txt
 
-      - name: Build Release APK
+      - name: Install project dependencies
         run: |
-          rm -rf .buildozer bin dist build 2>/dev/null || true
-          mkdir -p bin
+          pip install -r requirements.txt || echo "Main requirements installed"
+          pip install -r requirements_mobile.txt || echo "Mobile requirements installed"
+
+      - name: Build APK
+        run: |
+          rm -rf .buildozer bin dist 2>/dev/null || true
           buildozer android release -v
 
-      - name: Check build output
-        if: always()
+      - name: Check APK output
         run: |
           if [ -f "bin/orag-"*"-release-unsigned.apk" ]; then
             ls -lh bin/orag-*-release-unsigned.apk
-            echo "BUILD_SUCCESS=true" >> $GITHUB_ENV
           else
-            echo "BUILD_SUCCESS=false" >> $GITHUB_ENV
-            find .buildozer -name "*.apk" 2>/dev/null || echo "No APK found"
+            echo "Build failed - APK not found in bin/"
+            exit 1
           fi
 
-      - name: Create Release
-        if: env.BUILD_SUCCESS == 'true'
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v3-${{ steps.commit.outputs.date }}
-          name: V3 Build - ${{ steps.commit.outputs.date }}
-          body: |
-            # O-RAG v3 Build - Models Download on First Launch
-            
-            **Build Info:**
-            - Commit: ${{ steps.commit.outputs.hash }}
-            - Branch: v3
-            - Date: ${{ steps.commit.outputs.date }}
-            
-            **Models (Auto-Download on First Launch):**
-            - Qwen 3.5-2B Q4_K_M (1.3 GB) from bartowski
-            - Nomic Embed Text v1.5 Q4_K_M (80 MB)
-            
-            **Installation:**
-            ```bash
-            adb install orag-*-release-unsigned.apk
-            ```
-            
-            **First Launch:**
-            App downloads models automatically (~5-10 minutes), then works fully offline.
-            
-            **Features:**
-            - Material Design 3 UI
-            - Automatic model download on first launch
-            - Fully offline RAG with semantic search
-            - Optimized for 4GB+ Android devices
-            - Latest Qwen 3.5 AI engine
-          files: bin/orag-*-release-unsigned.apk
-          draft: false
-          prerelease: false
-          target_commitish: v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          ref: v3
-          fetch-depth: 0
-
-      - name: Get commit info
-        id: commit
-        run: |
-          echo "commit_hash=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-          echo "commit_message=$(git log -1 --format=%B)" >> $GITHUB_OUTPUT
-          echo "build_date=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_OUTPUT
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: 'gradle'
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            git zip unzip ninja-build \
-            autoconf libtool pkg-config \
-            zlib1g-dev libncurses5-dev libncursesw5-dev \
-            libtinfo5 cmake libffi-dev libssl-dev \
-            wget clang
-
-      - name: Install build dependencies
-        run: |
-          python -m pip install --upgrade pip setuptools wheel
-          pip install "cython==0.29.37" buildozer pycryptodome
-          pip install -r requirements_mobile.txt 2>/dev/null || pip install -r requirements.txt
-          echo "Build dependencies installed"
-
-      - name: Verify model files
-        run: |
-          echo "Checking for model files..."
-          if [ -f "qwen2.5-1.5b-instruct-q4_k_m.gguf" ]; then
-            echo "LLM model found: $(du -h qwen2.5-1.5b-instruct-q4_k_m.gguf | cut -f1)"
-          else
-            echo "LLM model not in repo (will download on first launch)"
-          fi
-          
-          if [ -f "nomic-embed-text-v1.5.Q4_K_M.gguf" ]; then
-            echo "Embedding model found: $(du -h nomic-embed-text-v1.5.Q4_K_M.gguf | cut -f1)"
-          else
-            echo "Embedding model not in repo (will download on first launch)"
-          fi
-
-      - name: Clean previous builds
-        run: |
-          rm -rf .buildozer bin dist build 2>/dev/null || true
-          mkdir -p bin
-          echo "Previous builds cleaned"
-
-      - name: Build Release APK
-        env:
-          BUILDOZER_ANDROID_ACCEPT_SDK_LICENSE: '1'
-          BUILDOZER_LOG_LEVEL: 2
-        run: |
-          echo "Starting buildozer android release..."
-          buildozer android release -v 2>&1 | tee build.log
-          echo "Build completed"
-
-      - name: Check build output
-        if: always()
-        run: |
-          echo "Build artifacts:"
-          if [ -d "bin" ] && [ -n "$(ls -A bin/ 2>/dev/null)" ]; then
-            ls -lh bin/
-            echo "Found APK files"
-          else
-            echo "No bin directory or APK files found"
-            echo "Checking buildozer output..."
-            find .buildozer -name "*.apk" 2>/dev/null | head -5
-          fi
-
-      - name: Generate release notes
-        id: release_notes
-        run: |
-          cat > RELEASE_NOTES.md << EOF
-          # O-RAG v3 Build - ${{ steps.commit.outputs.build_date }}
-
-          **Build Info:**
-          - Branch: v3
-          - Commit: ${{ steps.commit.outputs.commit_hash }}
-          - Build Date: ${{ steps.commit.outputs.build_date }}
-
-          **Optimizations Included:**
-          ✅ Phase A: Analytics + Material Design 3 system
-          ✅ Phase B: Beautiful download screen with progress
-          ✅ Phase C: Complete Material Design 3 UI modernization
-          ✅ Phase D: Automatic memory optimization for 4GB devices
-          ✅ Phase E: Android build tuned for 4GB RAM
-
-          **Key Features:**
-          - 🎨 Material Design 3 interface
-          - 📥 Automatic model download on first launch
-          - 💾 Automatic memory management (NORMAL/CAUTION/CRITICAL)
-          - ⚡ Optimized for 4GB Android devices
-          - 📊 Real-time analytics dashboard
-          - 🔍 Smart document retrieval with RAG
-
-          **Target Device:**
-          - Android 8+ (API 26+)
-          - 4GB RAM minimum
-          - arm64-v8a architecture
-
-          **APK Details:**
-          - Size: ~130-150MB
-          - Includes embedded LLM + embeddings models
-          - JVM heap: 512MB (optimized for 4GB devices)
-          - Garbage collector: G1GC
-
-          **Installation:**
-          \`\`\`bash
-          adb install orag-1.0.0-release-unsigned.apk
-          \`\`\`
-
-          **First Launch:**
-          1. App opens InitScreen
-          2. Models download automatically (5-10 minutes)
-          3. Chat screen loads with analytics dashboard
-          4. Start using RAG queries
-
-          **Build Log:**
-          Commit message: ${{ steps.commit.outputs.commit_message }}
-          EOF
-          cat RELEASE_NOTES.md
-
-      - name: Create Release
+      - name: Create GitHub Release
         if: success()
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v3-build-${{ steps.commit.outputs.build_date }}
-          name: V3 Build - ${{ steps.commit.outputs.build_date }}
-          body_path: RELEASE_NOTES.md
-          files: bin/orag-*.apk
+          tag_name: v3-build-${{ github.run_number }}
+          name: V3 Build #${{ github.run_number }}
+          files: bin/orag-*-release-unsigned.apk
+          body: |
+            # O-RAG v3 - Automated APK Build
+            
+            **Models (Download on First Launch):**
+            - Qwen 3.5-2B Instruct Q4_K_M (~1.3 GB)
+            - Nomic Embed Text v1.5 Q4_K_M (~80 MB)
+            
+            **Installation:**
+            ```bash
+            adb install bin/orag-*-release-unsigned.apk
+            ```
+            
+            **First Run:**
+            App will automatically download AI models (~5-10 min), then operates fully offline.
           draft: false
           prerelease: false
-          target_commitish: v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload APK as artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: orag-v3-apk
-          path: bin/*.apk
-          retention-days: 30
-          if-no-files-found: warn
-
-      - name: Upload build log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log-${{ steps.commit.outputs.build_date }}
-          path: build.log
-          retention-days: 7
-          if-no-files-found: ignore
-
-      - name: Build Status Report
-        if: always()
-        run: |
-          echo "📋 Build Status Report"
-          echo "===================="
-          echo "Branch: v3"
-          echo "Commit: ${{ steps.commit.outputs.commit_hash }}"
-          echo "Time: ${{ steps.commit.outputs.build_date }}"
-          echo "Status: ${{ job.status }}"
-          echo ""
-          echo "📦 Output Files:"
-          if [ -d "bin" ]; then
-            ls -lh bin/ || echo "No files in bin/"
-          fi
-
-  # Notify on build completion
-  notify:
-    needs: build-apk
-    runs-on: ubuntu-latest
-    if: always()
-    steps:
-      - name: Build status
-        run: |
-          if [ "${{ needs.build-apk.result }}" == "success" ]; then
-            echo "V3 Build Successful!"
-            echo "Check GitHub Releases for APK download"
-          else
-            echo "V3 Build Failed"
-            echo "Review the build logs for details"
-          fi
