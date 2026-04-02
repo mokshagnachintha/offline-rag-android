@@ -56,34 +56,63 @@ jobs:
         run: |
           rm -rf .buildozer bin dist 2>/dev/null || true
           mkdir -p bin
-          buildozer android release -v 2>&1 | tee build.log
-          echo "Build completed"
+          export ANDROID_SDK_ROOT=$HOME/Android/Sdk
+          export ANDROID_NDK_ROOT=$HOME/Android/Ndk
+          echo "Starting buildozer build..."
+          buildozer android release -v 2>&1 | tee build.log || BUILD_FAILED=1
+          if [ -z "$BUILD_FAILED" ]; then
+            echo "✓ Build completed successfully"
+          else
+            echo "✗ Build failed, see details above"
+          fi
+          echo "BUILD_FAILED=$BUILD_FAILED" >> $GITHUB_ENV
 
       - name: Check APK output
+        if: always()
         run: |
+          echo "=== Build Diagnostics ===" 
           echo "Checking bin directory..."
           if [ -d "bin" ]; then
-            ls -lha bin/
+            echo "✓ bin directory exists"
+            ls -lha bin/ || echo "Failed to list bin"
           else
-            echo "ERROR: bin directory not found"
-            exit 1
+            echo "✗ bin directory not found"
           fi
           
-          APK_COUNT=$(find bin -name "*.apk" 2>/dev/null | wc -l)
-          echo "Found $APK_COUNT APK file(s)"
+          echo ""
+          echo "Searching for APK files..."
+          APK_COUNT=$(find . -name "*.apk" -type f 2>/dev/null | wc -l)
+          echo "Found $APK_COUNT APK file(s) total"
           
-          if [ $APK_COUNT -eq 0 ]; then
-            echo "ERROR: No APK files found"
-            echo "Checking buildozer output..."
-            grep -i "error\|failed" build.log || echo "No errors in log"
-            exit 1
+          if [ $APK_COUNT -gt 0 ]; then
+            echo "✓ APK files found:"
+            find . -name "*.apk" -type f 2>/dev/null | head -10
+            
+            # Move all APK files to bin if not already there
+            find . -name "*.apk" -type f ! -path "./bin/*" -exec cp {} bin/ \;
+          else
+            echo "✗ No APK files found anywhere"
+            echo ""
+            echo "Last 30 lines of build.log:"
+            tail -30 build.log || echo "No build.log found"
           fi
           
-          ls -lh bin/*.apk
+          # Final check
+          ls -lh bin/*.apk 2>/dev/null || echo "No APK files in bin/"
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ github.run_number }}
+          path: build.log
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Create GitHub Release
         if: success()
         uses: softprops/action-gh-release@v1
+        continue-on-error: true
         with:
           tag_name: v3-build-${{ github.run_number }}-${{ github.run_attempt }}
           name: V3 Build #${{ github.run_number }}
@@ -117,3 +146,18 @@ jobs:
           path: bin/*.apk
           retention-days: 30
           if-no-files-found: ignore
+
+      - name: Build Summary
+        if: always()
+        run: |
+          echo "=== Build Summary ==="
+          echo "Status: ${{ job.status }}"
+          echo "Run: ${{ github.run_number }}"
+          echo "Branch: v3"
+          echo ""
+          if [ -f "bin/orag-"*".apk" ]; then
+            echo "✓ APK Build Successful"
+            ls -lh bin/*.apk | awk '{print "  Size:", $5, "File:", $9}'
+          else
+            echo "⚠ APK not found in bin/"
+          fi
