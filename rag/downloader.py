@@ -552,15 +552,14 @@ def download_model_with_fallback(
     model_type: str = "llm",
 ) -> str:
     """
-    Download model with automatic fallback chain (synchronous wrapper).
-
-    If Qwen 3.5 fails, automatically try Qwen 2.5.
-    If CLIP unavailable, fallback to Nomic.
-
-    Returns: The actual model key that was successfully downloaded
+    Get fallback model key if fallback is needed.
     
-    Note: This is a blocking call that uses a Queue to wait for async downloads.
-    Better approach: Call download_model directly in production code.
+    This function validates the model exists in catalog and returns the model key.
+    Actual downloads should be handled by download_model() or auto_download_default().
+    
+    If model_key is not available, falls back to next available model in the catalog.
+    
+    Returns: The model key to use (either requested or fallback)
     """
     if model_type == "llm":
         available_models = model_config.LLM_MODELS
@@ -571,44 +570,16 @@ def download_model_with_fallback(
     fallback_chain = [model_key]
     fallback_chain.extend([k for k in available_models.keys() if k != model_key])
 
-    import queue
-    result_queue: queue.Queue = queue.Queue()
-
-    def try_download_model(attempt_model: str) -> bool:
-        """Try to download a single model and return success status."""
-        model_info = available_models[attempt_model]
-        print(f"[downloader] Attempting: {model_info['label']}")
-
-        def on_done_wrapper(success: bool, msg: str):
-            result_queue.put((success, msg, attempt_model))
-
-        try:
-            download_model(
-                repo_id=model_info["repo_id"],
-                filename=model_info["filename"],
-                on_progress=on_progress,
-                on_done=on_done_wrapper,
-            )
-
-            # Wait for result with timeout
-            success, msg, model_used = result_queue.get(timeout=600)  # 10 min timeout per model
-            if success:
-                print(f"[downloader] ✅ Successfully downloaded: {attempt_model}")
-                return True
-            else:
-                print(f"[downloader] ❌ Download failed: {msg}")
-                return False
-        except queue.Empty:
-            print(f"[downloader] ⏱️ Download timeout for {attempt_model}")
-            return False
-        except Exception as e:
-            print(f"[downloader] ❌ Exception ({attempt_model}): {e}")
-            return False
-
-    # Try each model in fallback chain
+    # Return the first available model (typically the requested one)
     for attempt_model in fallback_chain:
-        if try_download_model(attempt_model):
+        if attempt_model in available_models:
+            print(f"[downloader] Using model: {available_models[attempt_model]['label']}")
             return attempt_model
 
-    # All failed
-    raise RuntimeError(f"Could not download any model from: {fallback_chain}")
+    # Fallback to first available if nothing matches
+    if available_models:
+        first_key = list(available_models.keys())[0]
+        print(f"[downloader] Fallback: {available_models[first_key]['label']}")
+        return first_key
+    
+    raise RuntimeError(f"No models available for type: {model_type}")

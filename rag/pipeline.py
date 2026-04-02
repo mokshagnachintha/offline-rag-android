@@ -294,27 +294,27 @@ def configure_rag_for_device(device_preset: str = "4gb-mobile") -> dict:
     print(f"  LLM: {preset['llm']}")
     print(f"  Embedding: {preset['embedding']}")
     
-    # Download with fallback
-    try:
-        actual_llm = download_model_with_fallback(preset['llm'], model_type="llm")
-    except Exception as e:
-        print(f"[pipeline] LLM download failed: {e}")
-        actual_llm = preset['llm']
+    # Get model keys with fallback (no actual download)
+    actual_llm = download_model_with_fallback(preset['llm'], model_type="llm")
+    actual_embedding = download_model_with_fallback(preset['embedding'], model_type="embedding")
     
-    try:
-        actual_embedding = download_model_with_fallback(preset['embedding'], model_type="embedding")
-    except Exception as e:
-        print(f"[pipeline] Embedding download failed: {e}")
-        actual_embedding = preset['embedding']
-    
-    # Load models
+    # Load models from disk if they exist
     llm_path = model_dest_path(LLM_MODELS[actual_llm]["filename"])
     embedding_path = model_dest_path(EMBEDDING_MODELS[actual_embedding]["filename"])
     
-    print(f"[pipeline] Loading LLM: {llm_path}")
-    llm.load(llm_path)
+    print(f"[pipeline] Using LLM: {actual_llm}")
+    print(f"[pipeline] Using Embedding: {actual_embedding}")
     
-    print(f"[pipeline] Loading embedding: {embedding_path}")
+    # Only load if models already exist on disk
+    if os.path.exists(llm_path):
+        print(f"[pipeline] Loading LLM: {llm_path}")
+        llm.load(llm_path)
+    else:
+        print(f"[pipeline] LLM not found: {llm_path}")
+    
+    if os.path.exists(embedding_path):
+        print(f"[pipeline] Embedding model ready: {embedding_path}")
+    
     retriever._embedding_model_key = actual_embedding
     
     return {
