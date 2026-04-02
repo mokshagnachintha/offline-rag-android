@@ -138,38 +138,48 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Prepare APK for upload
+      - name: Locate APK file
         if: always()
         run: |
-          echo "Finding APK files for upload..."
-          mkdir -p artifacts
-          
-          if [ -d "bin" ]; then
-            APK_FOUND=$(find bin -maxdepth 1 -name "*.apk" -type f 2>/dev/null | wc -l)
-            if [ $APK_FOUND -gt 0 ]; then
-              echo "Found $APK_FOUND APK(s) in bin/"
-              cp bin/*.apk artifacts/ 2>/dev/null
-            fi
-          fi
-          
-          # Also check .buildozer directory
-          BUILDOZER_APK=$(find .buildozer -name "*.apk" -type f 2>/dev/null | head -1)
-          if [ ! -z "$BUILDOZER_APK" ]; then
-            echo "Found APK in buildozer: $BUILDOZER_APK"
-            cp "$BUILDOZER_APK" artifacts/
-          fi
-          
-          # List what we're uploading
+          echo "=== Searching for APK in all possible locations ==="
           echo ""
-          echo "Files to upload:"
-          ls -lh artifacts/ || echo "No files in artifacts/"
+          echo "1. Checking bin/ directory:"
+          ls -lh bin/ 2>/dev/null || echo "   bin/ not found"
+          
+          echo ""
+          echo "2. Checking .buildozer/android/platform/build-[variant]/dist/:"
+          find .buildozer -type d -name dist 2>/dev/null | while read dir; do
+            echo "   Dist directory: $dir"
+            ls -lh "$dir"/*.apk 2>/dev/null || echo "   No APK in this dist"
+          done
+          
+          echo ""
+          echo "3. Global search for all .apk files:"
+          find . -name "*.apk" -type f 2>/dev/null | head -20
+          
+          echo ""
+          echo "4. Creating apk-final directory and copying all APKs:"
+          mkdir -p apk-final
+          find . -name "*.apk" -type f ! -path "./.buildozer/cache/*" -exec cp {} apk-final/ \; 2>/dev/null
+          
+          echo "Files in apk-final/:"
+          ls -lh apk-final/ || echo "No files copied"
+          
+          # Save the count for later
+          APK_FINAL_COUNT=$(find apk-final -name "*.apk" 2>/dev/null | wc -l)
+          echo "APK_FINAL_COUNT=$APK_FINAL_COUNT" >> $GITHUB_ENV
+          echo "Total APKs found: $APK_FINAL_COUNT"
 
       - name: Upload APK as artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: orag-apk-${{ github.run_number }}
-          path: artifacts/*.apk
+          path: |
+            apk-final/*.apk
+            bin/*.apk
+            .buildozer/android/platform/build-*/dist/*.apk
+            .buildozer/android/platform/build/dist/*.apk
           retention-days: 30
           if-no-files-found: warn
 
@@ -182,15 +192,18 @@ jobs:
           echo "Branch: v3"
           echo ""
           
-          ARTIFACT_COUNT=$(find artifacts -name "*.apk" 2>/dev/null | wc -l)
-          if [ $ARTIFACT_COUNT -gt 0 ]; then
-            echo "✓ APK Successfully Built and Packaged"
-            echo "Artifact Count: $ARTIFACT_COUNT"
-            ls -lh artifacts/*.apk 2>/dev/null | awk '{print "  Size:", $5, "File:", $9}'
+          if [ "$APK_FINAL_COUNT" -gt 0 ]; then
+            echo "✓ APK Build Status: SUCCESS"
+            echo "Artifact Count: $APK_FINAL_COUNT"
             echo ""
-            echo "✓ APK available in: Artifacts → orag-apk-${{ github.run_number }}"
+            echo "Downloads:"
+            ls -lh apk-final/*.apk 2>/dev/null | awk '{print "  ", $9, "(" $5 ")"}'
+            echo ""
+            echo "✓ Download from: Actions → orag-apk-${{ github.run_number }} → Artifacts"
           else
-            echo "⚠ APK not found in artifacts/"
-            echo "Checking all locations..."
-            find . -name "*.apk" -type f 2>/dev/null | head -5
+            echo "⚠ APK Build Status: INCOMPLETE"
+            echo "No APK files were created or found"
+            echo ""
+            echo "Debug - checking for APK files anywhere:"
+            find . -name "*.apk" -type f 2>/dev/null | wc -l | xargs echo "Total APK count:"
           fi
