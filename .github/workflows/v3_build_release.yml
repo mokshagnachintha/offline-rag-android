@@ -52,16 +52,44 @@ jobs:
           pip install -r requirements.txt || echo "Main requirements installed"
           pip install -r requirements_mobile.txt || echo "Mobile requirements installed"
 
+      - name: Pre-accept Android SDK licenses (critical step)
+        run: |
+          echo "Pre-accepting Android SDK licenses using yes command..."
+          
+          # Download SDK command-line tools first
+          mkdir -p ~/.android-sdk-temp
+          cd ~/.android-sdk-temp
+          
+          # Download command-line tools
+          if [ ! -f "cmdlinetools.zip" ]; then
+            curl -L -o cmdlinetools.zip "https://dl.google.com/android/repository/commandlinetools-linux-6514223_latest.zip"
+          fi
+          
+          if [ -f "cmdlinetools.zip" ]; then
+            unzip -qo cmdlinetools.zip
+            
+            # Accept licenses with 'yes' command
+            mkdir -p ~/.android/licenses
+            yes | ./cmdline-tools/bin/sdkmanager --sdk_root=$HOME/.android --licenses 2>&1 | head -100 || true
+            
+            echo "✓ Licenses acceptance attempted"
+            ls -la ~/.android/licenses/
+          fi
+
       - name: Accept Android SDK licenses (pre-build setup)
         run: |
           echo "Setting up Android SDK license acceptance..."
           
-          # Set buildozer environment variable
-          export BUILDOZER_ANDROID_ACCEPT_SDK_LICENSE=1
-          echo "BUILDOZER_ANDROID_ACCEPT_SDK_LICENSE=1" >> $GITHUB_ENV
+          # Create .gradle directory with custom settings
+          mkdir -p ~/.gradle
+          cat > ~/.gradle/gradle.properties << 'EOF'
+          org.gradle.jvmargs=-Xmx1024m
+          EOF
           
-          # Create license files in home directory 
+          # Create license files in home directory with ALL license hashes
           mkdir -p ~/.android/licenses
+          
+          # All possible Android SDK license hashes
           echo "d56f5187479451eabf01fb78af6dfcb131b33910" > ~/.android/licenses/android-sdk-license
           echo "504667f4c0de7973335447fc6c3b3d07e678066c" > ~/.android/licenses/android-sdk-preview-license
           echo "129e256904b56848df64501b5ed41250192f32e6" > ~/.android/licenses/google-gdk-license
@@ -69,7 +97,15 @@ jobs:
           echo "887daf51f8dce29c925d26ce98a02dd0b7f92d22" > ~/.android/licenses/intel-android-system-image-license
           echo "79bb43eaa2624fc1708a847bd1d61d0f5c2d8d3c" > ~/.android/licenses/arm-linux-androideabi-ndk-license
           
-          echo "License files created: $(ls ~/.android/licenses/ | wc -l) files"
+          # Create additional license files that might be needed
+          echo "d56f5187479451eabf01fb78af6dfcb131b33910" > ~/.android/licenses/ndk-license
+          echo "d56f5187479451eabf01fb78af6dfcb131b33910" > ~/.android/licenses/platforms-license
+          
+          echo "✓ License files created in ~/.android/licenses/:"
+          ls -la ~/.android/licenses/
+          
+          export BUILDOZER_ANDROID_ACCEPT_SDK_LICENSE=1
+          echo "BUILDOZER_ANDROID_ACCEPT_SDK_LICENSE=1" >> $GITHUB_ENV
 
       - name: Build APK
         run: |
@@ -86,47 +122,60 @@ jobs:
           echo "Buildozer version: $(buildozer --version)"
           echo ""
           
-          # Function to accept all licenses
-          setup_licenses() {
+          # Function to create ALL license files
+          setup_all_licenses() {
             local sdk_path="$1"
             mkdir -p "${sdk_path}/licenses"
+            
             echo "d56f5187479451eabf01fb78af6dfcb131b33910" > "${sdk_path}/licenses/android-sdk-license"
             echo "504667f4c0de7973335447fc6c3b3d07e678066c" > "${sdk_path}/licenses/android-sdk-preview-license"
             echo "129e256904b56848df64501b5ed41250192f32e6" > "${sdk_path}/licenses/google-gdk-license"
             echo "dfaf6d33d4f163b9e23e234d547c6a31ec42d632" > "${sdk_path}/licenses/mips-android-system-image-license"
             echo "887daf51f8dce29c925d26ce98a02dd0b7f92d22" > "${sdk_path}/licenses/intel-android-system-image-license"
             echo "79bb43eaa2624fc1708a847bd1d61d0f5c2d8d3c" > "${sdk_path}/licenses/arm-linux-androideabi-ndk-license"
-            echo "✓ Licenses set in: $sdk_path"
+            echo "d56f5187479451eabf01fb78af6dfcb131b33910" > "${sdk_path}/licenses/ndk-license"
+            echo "d56f5187479451eabf01fb78af6dfcb131b33910" > "${sdk_path}/licenses/platforms-license"
+            
+            # Copy android-sdk-license to all possible variant names that sdkmanager might check
+            cp "${sdk_path}/licenses/android-sdk-license" "${sdk_path}/licenses/android-library-license"
+            cp "${sdk_path}/licenses/android-sdk-license" "${sdk_path}/licenses/sdk-license"
+            
+            echo "✓ All licenses set in: $sdk_path/licenses ("$(ls "${sdk_path}/licenses" | wc -l)" files)"
           }
+          
+          # Ensure home licenses are set FIRST
+          setup_all_licenses "$HOME/.android"
           
           # Start buildozer in background
           echo "Starting buildozer (running in background)..."
           buildozer android release -v 2>&1 | tee build.log &
           BUILD_PID=$!
           
-          # Monitor and setup licenses while build runs
-          echo "Monitoring build and setting up licenses..."
-          for i in {1..60}; do
-            sleep 2
+          # Aggressively monitor and setup licenses while build runs
+          echo "Monitoring build and proactively setting up licenses..."
+          LICENSES_SETUP=0
+          for i in {1..120}; do
+            sleep 1
             
             # Check if buildozer SDK directory exists
-            if [ -d "$HOME/.buildozer/android/platform/android-sdk" ]; then
-              setup_licenses "$HOME/.buildozer/android/platform/android-sdk"
-              break
+            if [ -d "$HOME/.buildozer/android/platform/android-sdk" ] && [ $LICENSES_SETUP -eq 0 ]; then
+              echo "SDK directory detected! Setting up licenses immediately..."
+              setup_all_licenses "$HOME/.buildozer/android/platform/android-sdk"
+              LICENSES_SETUP=1
+              # Also re-setup home licenses to be sure
+              setup_all_licenses "$HOME/.android"
             fi
-            
-            # Show progress
-            echo -ne "Attempt $i/60: Waiting for SDK directory... \r"
-          done
-          
-          # Also ensure home licenses are set
-          setup_licenses "$HOME/.android"
+          done &
+          MONITOR_PID=$!
           
           # Wait for build to complete
           echo ""
           echo "Waiting for buildozer to complete (PID: $BUILD_PID)..."
           wait $BUILD_PID
           BUILD_EXIT_CODE=$?
+          
+          # Kill monitoring loop
+          kill $MONITOR_PID 2>/dev/null || true
           
           echo ""
           echo "======================================"
@@ -139,6 +188,12 @@ jobs:
           else
             echo "✗ BUILD FAILED"
             echo "BUILD_SUCCESS=false" >> $GITHUB_ENV
+            echo ""
+            echo "License files that were created:"
+            find $HOME -path "*licenses*" -type f 2>/dev/null | head -20
+            echo ""
+            echo "Last 100 lines of build.log:"
+            tail -100 build.log || echo "build.log not found"
           fi
 
       - name: Analyze Build Errors
