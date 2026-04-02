@@ -138,14 +138,40 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Prepare APK for upload
+        if: always()
+        run: |
+          echo "Finding APK files for upload..."
+          mkdir -p artifacts
+          
+          if [ -d "bin" ]; then
+            APK_FOUND=$(find bin -maxdepth 1 -name "*.apk" -type f 2>/dev/null | wc -l)
+            if [ $APK_FOUND -gt 0 ]; then
+              echo "Found $APK_FOUND APK(s) in bin/"
+              cp bin/*.apk artifacts/ 2>/dev/null
+            fi
+          fi
+          
+          # Also check .buildozer directory
+          BUILDOZER_APK=$(find .buildozer -name "*.apk" -type f 2>/dev/null | head -1)
+          if [ ! -z "$BUILDOZER_APK" ]; then
+            echo "Found APK in buildozer: $BUILDOZER_APK"
+            cp "$BUILDOZER_APK" artifacts/
+          fi
+          
+          # List what we're uploading
+          echo ""
+          echo "Files to upload:"
+          ls -lh artifacts/ || echo "No files in artifacts/"
+
       - name: Upload APK as artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: apk-build-${{ github.run_number }}
-          path: bin/*.apk
+          name: orag-apk-${{ github.run_number }}
+          path: artifacts/*.apk
           retention-days: 30
-          if-no-files-found: ignore
+          if-no-files-found: warn
 
       - name: Build Summary
         if: always()
@@ -155,9 +181,16 @@ jobs:
           echo "Run: ${{ github.run_number }}"
           echo "Branch: v3"
           echo ""
-          if [ -f "bin/orag-"*".apk" ]; then
-            echo "✓ APK Build Successful"
-            ls -lh bin/*.apk | awk '{print "  Size:", $5, "File:", $9}'
+          
+          ARTIFACT_COUNT=$(find artifacts -name "*.apk" 2>/dev/null | wc -l)
+          if [ $ARTIFACT_COUNT -gt 0 ]; then
+            echo "✓ APK Successfully Built and Packaged"
+            echo "Artifact Count: $ARTIFACT_COUNT"
+            ls -lh artifacts/*.apk 2>/dev/null | awk '{print "  Size:", $5, "File:", $9}'
+            echo ""
+            echo "✓ APK available in: Artifacts → orag-apk-${{ github.run_number }}"
           else
-            echo "⚠ APK not found in bin/"
+            echo "⚠ APK not found in artifacts/"
+            echo "Checking all locations..."
+            find . -name "*.apk" -type f 2>/dev/null | head -5
           fi
