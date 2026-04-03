@@ -98,15 +98,24 @@ def _get_hf_hub():
         )
 
 
-def _expected_bytes(repo_id: str, filename: str) -> int:
-    """Return the file size in bytes from the HF Hub metadata (no download)."""
-    try:
-        from huggingface_hub import get_hf_file_metadata, hf_hub_url
-        url  = hf_hub_url(repo_id=repo_id, filename=filename)
-        meta = get_hf_file_metadata(url)
-        return meta.size or 0
-    except Exception:
-        return 0
+def _expected_bytes(repo_id: str, filename: str, max_retries: int = 3) -> int:
+    """Return the file size in bytes from the HF Hub metadata (no download). Retries on failure."""
+    from time import sleep
+    
+    for attempt in range(max_retries):
+        try:
+            from huggingface_hub import get_hf_file_metadata, hf_hub_url
+            url  = hf_hub_url(repo_id=repo_id, filename=filename)
+            meta = get_hf_file_metadata(url, timeout=30)
+            return meta.size or 0
+        except Exception as e:
+            if attempt < max_retries - 1:
+                wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
+                print(f"[downloader] Metadata fetch failed (attempt {attempt+1}/{max_retries}): {e}. Retrying in {wait_time}s...")
+                sleep(wait_time)
+            else:
+                print(f"[downloader] Failed to fetch metadata after {max_retries} attempts.")
+    return 0
 
 
 def download_model(
@@ -114,21 +123,24 @@ def download_model(
     filename:    str,
     on_progress: Optional[Callable[[float, str], None]] = None,
     on_done:     Optional[Callable[[bool, str], None]]  = None,
+    max_retries: int = 3,
 ) -> None:
     """
     Download a GGUF file from Hugging Face to the local models/ folder.
-    Runs in a background thread.
+    Runs in a background thread with automatic retry on failure.
 
     Progress is reported by polling the partial file size every 0.5 s,
     so it works with any version of huggingface_hub.
 
     on_progress(fraction 0-1, status_text) — called ~2×/sec during download
     on_done(success, dest_path_or_error)   — called on completion
+    max_retries: number of retry attempts for network failures
     """
     def _run():
         dest = model_dest_path(filename)
+        from time import sleep
 
-        if os.path.isfile(dest):
+        if os.path.isfile(dest) and os.path.getsize(dest) > 10 * 1024 * 1024:
             if on_progress:
                 on_progress(1.0, "Already downloaded.")
             if on_done:
@@ -137,69 +149,92 @@ def download_model(
 
         hf_hub_download = _get_hf_hub()
 
-        if on_progress:
-            on_progress(0.0, "Connecting to Hugging Face...")
-
-        # Fetch expected file size before download starts
-        total_bytes = _expected_bytes(repo_id, filename)
-
-        # --- progress poller (runs in its own thread) ---
-        _stop_poll = threading.Event()
-
-        def _poller():
-            # huggingface_hub writes to a .incomplete temp file first
-            inc_path = dest + ".incomplete"
-            while not _stop_poll.wait(0.5):
-                check = inc_path if os.path.isfile(inc_path) else dest
-                if os.path.isfile(check):
-                    done = os.path.getsize(check)
-                    if total_bytes:
-                        frac = min(done / total_bytes, 0.99)
-                        mb_d = done        / 1_048_576
-                        mb_t = total_bytes / 1_048_576
-                        if on_progress:
-                            on_progress(frac, f"{mb_d:.0f} / {mb_t:.0f} MB")
-                    else:
-                        mb_d = done / 1_048_576
-                        if on_progress:
-                            on_progress(0.0, f"{mb_d:.0f} MB downloaded...")
-
-        poll_thread = threading.Thread(target=_poller, daemon=True)
-        poll_thread.start()
-
-        try:
-            # Build kwargs carefully — older HF versions don't have some args
-            kwargs: dict = {
-                "repo_id":  repo_id,
-                "filename": filename,
-                "local_dir": _models_dir(),
-            }
-            # local_dir_use_symlinks added in ~0.17; silently skip if absent
-            try:
-                import inspect
-                from huggingface_hub import hf_hub_download as _hfd
-                if "local_dir_use_symlinks" in inspect.signature(_hfd).parameters:
-                    kwargs["local_dir_use_symlinks"] = False
-            except Exception:
-                pass
-
-            cached = hf_hub_download(**kwargs)
-
-            _stop_poll.set()
-            poll_thread.join(timeout=1)
-
-            if os.path.abspath(cached) != os.path.abspath(dest):
-                shutil.copy2(cached, dest)
-
+        for attempt in range(max_retries):
             if on_progress:
-                on_progress(1.0, "Download complete.")
-            if on_done:
-                on_done(True, dest)
+                msg = "Connecting to Hugging Face..." if attempt == 0 else f"Retrying... (attempt {attempt+1}/{max_retries})"
+                on_progress(0.0, msg)
 
-        except Exception as e:
-            _stop_poll.set()
-            if on_done:
-                on_done(False, f"Download failed: {e}")
+            # Fetch expected file size before download starts
+            total_bytes = _expected_bytes(repo_id, filename, max_retries=2)
+
+            # --- progress poller (runs in its own thread) ---
+            _stop_poll = threading.Event()
+
+            def _poller():
+                # huggingface_hub writes to a .incomplete temp file first
+                inc_path = dest + ".incomplete"
+                while not _stop_poll.wait(0.5):
+                    check = inc_path if os.path.isfile(inc_path) else dest
+                    if os.path.isfile(check):
+                        done = os.path.getsize(check)
+                        if total_bytes:
+                            frac = min(done / total_bytes, 0.99)
+                            mb_d = done        / 1_048_576
+                            mb_t = total_bytes / 1_048_576
+                            if on_progress:
+                                on_progress(frac, f"{mb_d:.0f} / {mb_t:.0f} MB")
+                        else:
+                            mb_d = done / 1_048_576
+                            if on_progress:
+                                on_progress(0.0, f"{mb_d:.0f} MB downloaded...")
+
+            poll_thread = threading.Thread(target=_poller, daemon=True)
+            poll_thread.start()
+
+            try:
+                # Build kwargs carefully — older HF versions don't have some args
+                kwargs: dict = {
+                    "repo_id":  repo_id,
+                    "filename": filename,
+                    "local_dir": _models_dir(),
+                    "timeout": 300,  # 5 minute timeout (important for slow networks)
+                }
+                # local_dir_use_symlinks added in ~0.17; silently skip if absent
+                try:
+                    import inspect
+                    from huggingface_hub import hf_hub_download as _hfd
+                    if "local_dir_use_symlinks" in inspect.signature(_hfd).parameters:
+                        kwargs["local_dir_use_symlinks"] = False
+                except Exception:
+                    pass
+
+                cached = hf_hub_download(**kwargs)
+
+                _stop_poll.set()
+                poll_thread.join(timeout=1)
+
+                if os.path.abspath(cached) != os.path.abspath(dest):
+                    shutil.copy2(cached, dest)
+
+                if on_progress:
+                    on_progress(1.0, "Download complete ✓")
+                if on_done:
+                    on_done(True, dest)
+                return  # Success, don't retry
+
+            except Exception as e:
+                _stop_poll.set()
+                poll_thread.join(timeout=1)
+                error_msg = str(e)
+                
+                # Clean up failed partial download
+                for incomplete in [dest + ".incomplete", dest]:
+                    if os.path.isfile(incomplete):
+                        try:
+                            os.remove(incomplete)
+                        except Exception:
+                            pass
+
+                if attempt < max_retries - 1:
+                    wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
+                    if on_progress:
+                        on_progress(0.0, f"Error: {error_msg[:50]}... Retrying in {wait_time}s...")
+                    sleep(wait_time)
+                else:
+                    # Final attempt failed
+                    if on_done:
+                        on_done(False, f"Download failed after {max_retries} attempts: {error_msg}")
+                    return
 
     threading.Thread(target=_run, daemon=True).start()
 
