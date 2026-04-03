@@ -32,7 +32,7 @@ requirements =
     filelock,
     packaging,
     fsspec,
-    llama-cpp-python
+    llama_cpp_python
 
 # Android bootstrap
 p4a.bootstrap = sdl2
