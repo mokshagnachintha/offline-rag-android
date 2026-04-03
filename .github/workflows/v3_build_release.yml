@@ -151,61 +151,53 @@ jobs:
           import os
           from huggingface_hub import hf_hub_download
           
-          # Qwen generation model
+          # Qwen generation model - download for reference/testing only
+          # NOTE: Not bundled in APK; app downloads on first launch
           qwen_path = hf_hub_download(
               repo_id="Qwen/Qwen2.5-1.5B-Instruct-GGUF",
               filename="qwen2.5-1.5b-instruct-q4_k_m.gguf",
-              local_dir="model_tmp",
+              local_dir="model_cache",
               local_dir_use_symlinks=False,
           )
-          print(f"Qwen: {os.path.getsize(qwen_path)//1_048_576} MB")
+          print(f"Qwen (reference): {os.path.getsize(qwen_path)//1_048_576} MB")
           
-          # Nomic embedding model
+          # Nomic embedding model - download for reference/testing only
           nomic_path = hf_hub_download(
               repo_id="nomic-ai/nomic-embed-text-v1.5-GGUF",
               filename="nomic-embed-text-v1.5.Q4_K_M.gguf",
-              local_dir="model_tmp",
+              local_dir="model_cache",
               local_dir_use_symlinks=False,
           )
-          print(f"Nomic: {os.path.getsize(nomic_path)//1_048_576} MB")
+          print(f"Nomic (reference): {os.path.getsize(nomic_path)//1_048_576} MB")
+          
+          print("\nNOTE: Models are NOT bundled in APK.")
+          print("App will download to device storage on first launch.")
           PYEOF
 
-      - name: Patch APK with llama-server + models
+      - name: Patch APK with llama-server (no models)
         run: |
           python3 - <<'PYEOF'
           import zipfile, glob, os
           
           apk = glob.glob("bin/*.apk")[0]
-          models = glob.glob("model_tmp/*.gguf")
           srv = "llama-server-arm64"
           tmp = apk + ".tmp"
           CHUNK = 4 * 1024 * 1024
           
           print(f"APK: {apk} ({os.path.getsize(apk)//1_048_576} MB)")
           print(f"Binary: {srv} ({os.path.getsize(srv)//1024} KB)")
-          for m in models:
-              print(f"Model: {os.path.basename(m)} ({os.path.getsize(m)//1_048_576} MB)")
+          print("\nPatching APK (adding llama-server only, no models)...")
           
           with zipfile.ZipFile(apk, "r") as src, \
                zipfile.ZipFile(tmp, "w", compression=zipfile.ZIP_DEFLATED, allowZip64=True) as dst:
               
-              # Copy all existing entries except META-INF
+              # Copy all existing entries except META-INF and any asset models
               for item in src.infolist():
                   if item.filename.startswith("META-INF/"):
                       continue
+                  if item.filename.startswith("assets/models/"):
+                      continue
                   dst.writestr(item, src.read(item.filename))
-              
-              # Add models (uncompressed)
-              for model in models:
-                  model_name = os.path.basename(model)
-                  asset_path = f"assets/models/{model_name}"
-                  print(f"Adding {asset_path}...")
-                  
-                  mi = zipfile.ZipInfo(asset_path)
-                  mi.compress_type = zipfile.ZIP_STORED
-                  with open(model, "rb") as mf, dst.open(mi, "w") as zo:
-                      while chunk := mf.read(CHUNK):
-                          zo.write(chunk)
               
               # Add binary as native library (so Android extracts at install)
               print("Adding lib/arm64-v8a/libllama_server.so...")
@@ -217,16 +209,26 @@ jobs:
                       zo.write(chunk)
           
           os.replace(tmp, apk)
-          print(f"Final APK: {os.path.getsize(apk)//1_048_576} MB")
+          final_size = os.path.getsize(apk)
+          print(f"\nFinal APK: {final_size//1_048_576} MB")
           
           # Verify contents
           with zipfile.ZipFile(apk, 'r') as vf:
               names = vf.namelist()
-              for check in ["lib/arm64-v8a/libllama_server.so",
-                            "assets/models/qwen2.5-1.5b-instruct-q4_k_m.gguf",
-                            "assets/models/nomic-embed-text-v1.5.Q4_K_M.gguf"]:
-                  found = check in names
-                  print(f"  {'✓' if found else '✗'} {check}")
+              print("\nAPK contents check:")
+              
+              # Check llama-server
+              found_lib = "lib/arm64-v8a/libllama_server.so" in names
+              print(f"  {'✓' if found_lib else '✗'} llama-server binary")
+              
+              # Verify NO models embedded
+              model_files = [n for n in names if n.startswith("assets/models/")]
+              if model_files:
+                  print(f"  ✗ UNEXPECTED: {len(model_files)} model files found in APK!")
+                  for m in model_files:
+                      print(f"     - {m}")
+              else:
+                  print(f"  ✓ No models embedded (will download on first app launch)")
           PYEOF
 
       - name: Upload APK artifact
