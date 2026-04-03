@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 180
     
     steps:
@@ -19,12 +19,12 @@ jobs:
         with:
           ref: v3
           
-      - name: Set up Python
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           
-      - name: Set up JDK
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
@@ -32,12 +32,13 @@ jobs:
           
       - name: Install system dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            git zip unzip autoconf libtool pkg-config \
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            git zip unzip ninja-build \
+            autoconf libtool pkg-config \
             zlib1g-dev libncurses5-dev libncursesw5-dev \
-            cmake libffi-dev libssl-dev libpng-dev \
-            expect xvfb ccache
+            libtinfo5 cmake libffi-dev libssl-dev \
+            wget lld clang
             
       - name: Install Python dependencies
         run: |
@@ -53,7 +54,6 @@ jobs:
           echo "504667f4c0de7973335447fc6c3b3d07e678066c" > ~/.android/licenses/android-sdk-preview-license
           echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > ~/.android/licenses/android-sdk-preview-license-old
           chmod 644 ~/.android/licenses/*
-          ls -la ~/.android/licenses/
           
       - name: Set up ccache
         uses: actions/cache@v4
@@ -62,7 +62,7 @@ jobs:
           key: ccache-${{ runner.os }}-${{ github.run_number }}
           restore-keys: ccache-${{ runner.os }}-
           
-      - name: Cache buildozer packages
+      - name: Cache buildozer
         uses: actions/cache@v4
         with:
           path: |
@@ -70,119 +70,177 @@ jobs:
             /tmp/.buildozer
           key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
           restore-keys: buildozer-${{ runner.os }}-
-          
-      - name: Build APK
+
+      - name: Clone llama.cpp source
         run: |
-          set +e
-          
-          echo "=========================================="
-          echo "Building O-RAG APK - Run #${{ github.run_number }}"
-          echo "=========================================="
-          echo ""
-          
-          # Clean build directories
-          rm -rf .buildozer dist bin *.log 2>/dev/null || true
-          mkdir -p bin
-          
-          # Export environment variables for license acceptance
-          export BUILDOZER_ANDROID_ACCEPT_SDK_LICENSE=1
-          export ANDROID_SDK_ROOT=$HOME/Android/Sdk
-          export ANDROID_NDK_ROOT=$HOME/Android/Ndk
-          
-          # Pre-accept licenses one more time during build
-          mkdir -p ~/.android/licenses
-          echo "d56f5187479451eabf01fb78af6dfcb131b33910" > ~/.android/licenses/android-sdk-license
-          
-          # Create wrapper script to auto-accept all prompts
-          cat > run_buildozer.sh << 'SCRIPT'
-          #!/bin/bash
-          (
-            echo y
-            echo y
-            echo y
-            sleep 2
-            yes
-          ) | buildozer android release -v 2>&1
-          SCRIPT
-          chmod +x run_buildozer.sh
-          
-          # Run build with timeout and automatic responses
-          timeout 5400 ./run_buildozer.sh | tee buildozer.log
-          BUILD_EXIT=$?
-          
-          echo ""
-          echo "Build process exit code: $BUILD_EXIT"
-          
-      - name: Find and stage APK
-        if: always()
+          git clone --depth 1 https://github.com/ggml-org/llama.cpp.git /tmp/llama_cpp_src
+          echo "llama.cpp cloned: $(ls /tmp/llama_cpp_src | head -20)"
+
+      - name: Build base APK (without llama bindings)
+        env:
+          GRADLE_OPTS: "-Xmx4g -XX:MaxMetaspaceSize=512m"
         run: |
-          mkdir -p release
+          java -version
+          unset PYTHONHOME PYTHONPATH
+          rm -rf .buildozer/android/platform/build-arm64-v8a/build/other_builds/hostpython3 2>/dev/null || true
+          rm -rf ~/.buildozer/android/platform/build-arm64-v8a/build/other_builds/hostpython3 2>/dev/null || true
+          rm -rf .buildozer/android/platform/build-arm64-v8a/dists/ 2>/dev/null || true
+          rm -rf ~/.buildozer/android/platform/build-arm64-v8a/dists/ 2>/dev/null || true
+          rm -rf .buildozer/android/app 2>/dev/null || true
+          mkdir -p ~/.android && touch ~/.android/repositories.cfg
           
-          echo "Searching for APK files..."
-          echo ""
+          # Remove llama_cpp_python from requirements temporarily - we'll compile separately
+          sed -i '/llama_cpp_python/d' buildozer.spec
           
-          # Search in all possible locations
-          find . -name "*.apk" -type f ! -path "./.git/*" ! -path "./.buildozer/cache/*" -print0 2>/dev/null | while IFS= read -r -d '' file; do
-            echo "Found: $file"
-            cp "$file" release/
-          done
+          yes 2>/dev/null | buildozer android release 2>&1 | tee build.log
+          exit ${PIPESTATUS[1]}
           
-          echo ""
-          echo "APKs in staging directory:"
-          ls -lh release/ 2>/dev/null || echo "No APKs found!"
+      - name: Compile llama-server for Android ARM64
+        run: |
+          set -e
           
-          # Save exit code for later
-          if [ -f release/*.apk ]; then
-            echo "APK_FOUND=1" >> $GITHUB_ENV
-            ls -1 release/*.apk | head -1 | xargs -I {} basename {} | tee apk_name.txt
-          else
-            echo "APK_FOUND=0" >> $GITHUB_ENV
-            echo "No APK found in release directory"
-            echo ""
-            echo "Directory structure:"
-            find . -maxdepth 4 -type d -name "dist" -o -name "bin" | head -5
-            echo ""
-            echo "Last 50 lines of buildozer log:"
-            tail -50 buildozer.log 2>/dev/null || echo "No log found"
+          NDK_HOME=$(find $HOME/.buildozer/android/platform -maxdepth 1 \
+            -name "android-ndk-*" -type d | head -1)
+          TOOLCHAIN="$NDK_HOME/build/cmake/android.toolchain.cmake"
+          
+          echo "NDK: $NDK_HOME"
+          echo "Toolchain: $TOOLCHAIN"
+          
+          if [ ! -f "$TOOLCHAIN" ]; then
+            echo "FATAL: Android NDK toolchain not found!"
+            exit 1
           fi
           
+          cmake -S /tmp/llama_cpp_src -B llama_build \
+            -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" \
+            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_PLATFORM=android-28 \
+            -DCMAKE_BUILD_TYPE=MinSizeRel \
+            -DGGML_NATIVE=OFF \
+            -DGGML_OPENMP=OFF \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DLLAMA_CURL=OFF \
+            -DLLAMA_BUILD_TESTS=OFF \
+            -DLLAMA_BUILD_EXAMPLES=ON \
+            -DLLAMA_SERVER_VERBOSE=OFF
+          
+          cmake --build llama_build --target llama-server -j$(nproc)
+          
+          BIN=$(find llama_build -name "llama-server" -type f 2>/dev/null | head -1)
+          if [ -z "$BIN" ]; then
+            echo "ERROR: llama-server not found"
+            find llama_build -type f 2>/dev/null | head -20
+            exit 1
+          fi
+          
+          cp "$BIN" llama-server-arm64
+          chmod 755 llama-server-arm64
+          
+          STRIP="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip"
+          if [ -f "$STRIP" ]; then
+            "$STRIP" --strip-unneeded llama-server-arm64
+          fi
+          
+          echo "llama-server-arm64: $(du -sh llama-server-arm64)"
+
+      - name: Download GGUF models
+        run: |
+          pip install huggingface-hub --quiet
+          python3 - <<'PYEOF'
+          import os
+          from huggingface_hub import hf_hub_download
+          
+          # Qwen generation model
+          qwen_path = hf_hub_download(
+              repo_id="Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+              filename="qwen2.5-1.5b-instruct-q4_k_m.gguf",
+              local_dir="model_tmp",
+              local_dir_use_symlinks=False,
+          )
+          print(f"Qwen: {os.path.getsize(qwen_path)//1_048_576} MB")
+          
+          # Nomic embedding model
+          nomic_path = hf_hub_download(
+              repo_id="nomic-ai/nomic-embed-text-v1.5-GGUF",
+              filename="nomic-embed-text-v1.5.Q4_K_M.gguf",
+              local_dir="model_tmp",
+              local_dir_use_symlinks=False,
+          )
+          print(f"Nomic: {os.path.getsize(nomic_path)//1_048_576} MB")
+          PYEOF
+
+      - name: Patch APK with llama-server + models
+        run: |
+          python3 - <<'PYEOF'
+          import zipfile, glob, os
+          
+          apk = glob.glob("bin/*.apk")[0]
+          models = glob.glob("model_tmp/*.gguf")
+          srv = "llama-server-arm64"
+          tmp = apk + ".tmp"
+          CHUNK = 4 * 1024 * 1024
+          
+          print(f"APK: {apk} ({os.path.getsize(apk)//1_048_576} MB)")
+          print(f"Binary: {srv} ({os.path.getsize(srv)//1024} KB)")
+          for m in models:
+              print(f"Model: {os.path.basename(m)} ({os.path.getsize(m)//1_048_576} MB)")
+          
+          with zipfile.ZipFile(apk, "r") as src, \
+               zipfile.ZipFile(tmp, "w", compression=zipfile.ZIP_DEFLATED, allowZip64=True) as dst:
+              
+              # Copy all existing entries except META-INF
+              for item in src.infolist():
+                  if item.filename.startswith("META-INF/"):
+                      continue
+                  dst.writestr(item, src.read(item.filename))
+              
+              # Add models (uncompressed)
+              for model in models:
+                  model_name = os.path.basename(model)
+                  asset_path = f"assets/models/{model_name}"
+                  print(f"Adding {asset_path}...")
+                  
+                  mi = zipfile.ZipInfo(asset_path)
+                  mi.compress_type = zipfile.ZIP_STORED
+                  with open(model, "rb") as mf, dst.open(mi, "w") as zo:
+                      while chunk := mf.read(CHUNK):
+                          zo.write(chunk)
+              
+              # Add binary as native library (so Android extracts at install)
+              print("Adding lib/arm64-v8a/libllama_server.so...")
+              bi = zipfile.ZipInfo("lib/arm64-v8a/libllama_server.so")
+              bi.compress_type = zipfile.ZIP_STORED
+              bi.external_attr = 0o755 << 16
+              with open(srv, "rb") as bf, dst.open(bi, "w") as zo:
+                  while chunk := bf.read(CHUNK):
+                      zo.write(chunk)
+          
+          os.replace(tmp, apk)
+          print(f"Final APK: {os.path.getsize(apk)//1_048_576} MB")
+          
+          # Verify contents
+          with zipfile.ZipFile(apk, 'r') as vf:
+              names = vf.namelist()
+              for check in ["lib/arm64-v8a/libllama_server.so",
+                            "assets/models/qwen2.5-1.5b-instruct-q4_k_m.gguf",
+                            "assets/models/nomic-embed-text-v1.5.Q4_K_M.gguf"]:
+                  found = check in names
+                  print(f"  {'✓' if found else '✗'} {check}")
+          PYEOF
+
       - name: Upload APK artifact
-        if: env.APK_FOUND == '1'
         uses: actions/upload-artifact@v4
         with:
           name: orag-apk-${{ github.run_number }}
-          path: release/
+          path: bin/*.apk
           retention-days: 30
           if-no-files-found: error
-          
-      - name: Upload build log
-        if: always()
+
+      - name: Upload build log (on failure)
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: build-log-${{ github.run_number }}
-          path: buildozer.log
+          path: build.log
           retention-days: 7
-          if-no-files-found: ignore
-
-      - name: Summary
-        if: always()
-        run: |
-          echo "=== Build Summary ==="
-          echo "Run: #${{ github.run_number }}"
-          
-          if [ -f release/*.apk ]; then
-            echo ""
-            echo "✓ APK READY FOR DOWNLOAD"
-            echo "Artifacts: orag-apk-${{ github.run_number }}"
-            ls -lh release/
-          else
-            echo ""
-            echo "✗ Build finished but no APK generated"
-            echo ""
-            echo "Check build log: build-log-${{ github.run_number }}"
-            if [ -f buildozer.log ]; then
-              echo ""
-              echo "Last 30 lines of build log:"
-              tail -30 buildozer.log
-            fi
-          fi

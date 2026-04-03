@@ -37,10 +37,6 @@ requirements =
 # Android bootstrap
 p4a.bootstrap = sdl2
 
-# Use local recipes directory where llama_cpp_python recipe is located
-# P4A will look for recipes in: p4a-recipes/llama_cpp_python/__init__.py
-p4a.local_recipes = %(source.dir)s/p4a-recipes
-
 # Orientation: portrait only
 orientation = portrait
 
