@@ -41,6 +41,8 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 # Log each import for diagnostics
 _import_log = lambda msg: print(f"[IMPORT] {msg}")
+_import_error = None
+_import_traceback_str = ""
 
 try:
     _import_log("Loading UI screens...")
@@ -49,14 +51,25 @@ try:
     from ui.screens.analytics_dashboard import AnalyticsDashboardScreen
     
     _import_log("Loading RAG pipeline...")
-    from rag.pipeline           import init
+    from rag.pipeline import init
     _import_log("Loading downloader...")
     from rag.downloader import is_downloaded, QWEN_MODEL, NOMIC_MODEL
     _import_log("Core imports successful")
-except ImportError as e:
-    _import_log(f"IMPORT ERROR: {e}")
-    traceback.print_exc()
-    raise
+except Exception as e:
+    _import_log(f"IMPORT ERROR: {type(e).__name__}: {e}")
+    _import_error = e
+    _import_traceback_str = traceback.format_exc()
+    print(_import_traceback_str)
+    
+    # Minimal fallback imports
+    ChatScreen = None
+    InitScreen = None
+    init_screen_with_downloads = None
+    AnalyticsDashboardScreen = None
+    init = None
+    is_downloaded = None
+    QWEN_MODEL = None
+    NOMIC_MODEL = None
 
 # Analytics setup
 try:
@@ -121,9 +134,80 @@ def _start_android_service():
 
 def _models_ready() -> bool:
     """Check if both models are downloaded and ready."""
-    qwen_ok = is_downloaded(QWEN_MODEL["filename"])
-    nomic_ok = is_downloaded(NOMIC_MODEL["filename"])
-    return qwen_ok and nomic_ok
+    if is_downloaded is None or QWEN_MODEL is None or NOMIC_MODEL is None:
+        print("[main] Model checker not available")
+        return False
+    try:
+        qwen_ok = is_downloaded(QWEN_MODEL["filename"])
+        nomic_ok = is_downloaded(NOMIC_MODEL["filename"])
+        return qwen_ok and nomic_ok
+    except Exception as e:
+        print(f"[main] Error checking models: {e}")
+        return False
+
+
+class ErrorScreen:
+    """Minimal error display screen for import/startup failures."""
+    @staticmethod
+    def create(error_msg: str, traceback_str: str):
+        from kivy.uix.screen import Screen
+        from kivy.uix.boxlayout import BoxLayout
+        from kivy.uix.scrollview import ScrollView
+        from kivy.uix.label import Label
+        from kivy.graphics import Color, Rectangle
+        
+        screen = Screen(name="error")
+        root = BoxLayout(orientation="vertical", padding=10, spacing=10)
+        
+        # Background
+        with root.canvas.before:
+            Color(0.1, 0.1, 0.1, 1)
+            bg = Rectangle()
+        root.bind(pos=lambda w, _: setattr(bg, "pos", w.pos),
+                  size=lambda w, _: setattr(bg, "size", w.size))
+        
+        # Title
+        title = Label(
+            text="[b]O-RAG Startup Error[/b]",
+            markup=True,
+            size_hint_y=None,
+            height=40,
+            color=(1, 0.2, 0.2, 1)
+        )
+        root.add_widget(title)
+        
+        # Error message
+        err_label = Label(
+            text=f"[color=ff0000]{error_msg}[/color]",
+            markup=True,
+            size_hint_y=None,
+            height=80
+        )
+        root.add_widget(err_label)
+        
+        # Traceback in scrollview
+        scroll = ScrollView(size_hint=(1, 1))
+        tb_label = Label(
+            text=f"[color=cccccc]{traceback_str[:1000]}...[/color]",
+            markup=True,
+            size_hint_y=None,
+            height=max(200, len(traceback_str) // 50)
+        )
+        scroll.add_widget(tb_label)
+        root.add_widget(scroll)
+        
+        # Restart button
+        restart_btn = Label(
+            text="[b]Please restart the app[/b]",
+            markup=True,
+            size_hint_y=None,
+            height=40,
+            color=(0.5, 0.8, 1, 1)
+        )
+        root.add_widget(restart_btn)
+        
+        screen.add_widget(root)
+        return screen
 
 
 class RAGApp(App):
@@ -131,6 +215,30 @@ class RAGApp(App):
 
     def build(self):
         try:
+            # If there was an import error, show error screen
+            if _import_error:
+                print(f"[APP] Showing error screen due to import failure")
+                screen = ErrorScreen.create(
+                    f"Import failed: {type(_import_error).__name__}",
+                    _import_traceback_str
+                )
+                return screen.children[0] if screen.children else BoxLayout()
+            
+            # Otherwise, proceed with normal startup
+            return self._build_normal()
+        except Exception as exc:
+            print(f"[CRASH] App build failed: {exc}")
+            import traceback as tb
+            tb.print_exc()
+            # Return minimal widget to prevent complete crash
+            return BoxLayout()
+    
+    def _build_normal(self):
+        try:
+            # Check if core modules loaded successfully
+            if ChatScreen is None or InitScreen is None:
+                raise RuntimeError("Core screen modules failed to import")
+            
             # Start analytics monitoring
             start_continuous_monitoring(interval_seconds=5.0)
 
@@ -155,8 +263,9 @@ class RAGApp(App):
             # Add chat screen
             sm.add_widget(ChatScreen(name="chat"))
 
-            # Add analytics dashboard screen
-            sm.add_widget(AnalyticsDashboardScreen(name="analytics"))
+            # Add analytics dashboard screen if available
+            if AnalyticsDashboardScreen:
+                sm.add_widget(AnalyticsDashboardScreen(name="analytics"))
 
             root.add_widget(sm)
 
@@ -168,10 +277,15 @@ class RAGApp(App):
 
             return root
         except Exception as exc:
-            print(f"[CRASH] App build failed: {exc}")
+            print(f"[CRASH] Normal build failed: {exc}")
             import traceback
             traceback.print_exc()
-            raise
+            # Return error screen instead of crashing
+            screen = ErrorScreen.create(
+                f"Build failed: {type(exc).__name__}: {exc}",
+                traceback.format_exc()
+            )
+            return screen.children[0] if screen.children else BoxLayout()
 
     def _route_initial_screen(self, sm: ScreenManager, init_screen: InitScreen):
         """Route to init screen or chat based on model availability."""
@@ -179,7 +293,10 @@ class RAGApp(App):
             if _models_ready():
                 # Models ready → go to chat
                 print("[main] Models ready, starting chat...")
-                init(on_done=lambda ok, msg: sm.switch_to(sm.get_screen("chat")))
+                if init:
+                    init(on_done=lambda ok, msg: sm.switch_to(sm.get_screen("chat")))
+                else:
+                    sm.switch_to(sm.get_screen("chat"))
             else:
                 # Models not ready → show init screen and start downloads
                 print("[main] Models not ready, showing initialization screen...")
@@ -189,12 +306,15 @@ class RAGApp(App):
                 import threading
                 def _start_downloads():
                     try:
-                        init_screen_with_downloads(
-                            init_screen,
-                            on_complete=lambda success: (
-                                self._on_download_complete(sm, success)
-                            ),
-                        )
+                        if init_screen_with_downloads:
+                            init_screen_with_downloads(
+                                init_screen,
+                                on_complete=lambda success: (
+                                    self._on_download_complete(sm, success)
+                                ),
+                            )
+                        else:
+                            print("[main] Download function not available, skipping downloads")
                     except Exception as e:
                         print(f"[main] Download thread error: {e}")
                         import traceback
@@ -205,13 +325,18 @@ class RAGApp(App):
             print(f"[main] Route to initial screen failed: {exc}")
             import traceback
             traceback.print_exc()
+            # Show init screen even if routing fails
+            sm.current = "init"
 
     def _on_download_complete(self, sm: ScreenManager, success: bool):
         """Called when model downloads complete."""
         try:
             if success:
                 print("[main] Downloads complete, initializing pipeline...")
-                init(on_done=lambda ok, msg: sm.switch_to(sm.get_screen("chat")))
+                if init:
+                    init(on_done=lambda ok, msg: sm.switch_to(sm.get_screen("chat")))
+                else:
+                    sm.switch_to(sm.get_screen("chat"))
             else:
                 print("[main] Download failed, allowing user to retry/skip")
                 # User can manually tap "Skip" button or retry
