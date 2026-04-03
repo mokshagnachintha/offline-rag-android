@@ -92,7 +92,9 @@ jobs:
           # Remove llama_cpp_python from requirements temporarily - we'll compile separately
           sed -i '/llama_cpp_python/d' buildozer.spec
           
-          yes 2>/dev/null | buildozer android release 2>&1 | tee build.log
+          # Use debug mode to generate APK (not AAB bundled format)
+          # We'll strip and sign separately if needed
+          yes 2>/dev/null | buildozer android debug 2>&1 | tee build.log
           exit ${PIPESTATUS[1]}
           
       - name: Compile llama-server for Android ARM64
