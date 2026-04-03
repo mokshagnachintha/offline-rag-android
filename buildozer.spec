@@ -38,6 +38,7 @@ requirements =
 p4a.bootstrap = sdl2
 
 # Custom recipe directory for llama_cpp_python
+# Path is set via P4A_RECIPES environment variable in buildozer workflow
 p4a.local_recipes = ./p4a-recipes
 
 # Orientation: portrait only

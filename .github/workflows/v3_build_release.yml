@@ -88,6 +88,9 @@ jobs:
           export BUILDOZER_ANDROID_ACCEPT_SDK_LICENSE=1
           export ANDROID_SDK_ROOT=$HOME/Android/Sdk
           export ANDROID_NDK_ROOT=$HOME/Android/Ndk
+          export P4A_RECIPES=$(pwd)/p4a-recipes
+          
+          echo "P4A_RECIPES=$P4A_RECIPES"
           
           # Pre-accept licenses one more time during build
           mkdir -p ~/.android/licenses
