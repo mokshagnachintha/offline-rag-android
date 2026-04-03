@@ -37,6 +37,9 @@ requirements =
 # Android bootstrap
 p4a.bootstrap = sdl2
 
+# Custom recipe directory for llama_cpp_python
+p4a.local_recipes = ./p4a-recipes
+
 # Orientation: portrait only
 orientation = portrait
 
