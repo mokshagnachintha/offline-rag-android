@@ -31,7 +31,8 @@ requirements =
     tqdm,
     filelock,
     packaging,
-    fsspec
+    fsspec,
+    llama-cpp-python
 
 # Android bootstrap
 p4a.bootstrap = sdl2
