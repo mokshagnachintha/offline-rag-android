@@ -89,13 +89,6 @@ jobs:
           export ANDROID_SDK_ROOT=$HOME/Android/Sdk
           export ANDROID_NDK_ROOT=$HOME/Android/Ndk
           
-          # Copy custom recipes to buildozer's recipe cache
-          # Buildozer looks for recipes in ~/.buildozer/android/platform/recipes-sources
-          echo "Setting up custom recipes..."
-          mkdir -p ~/.buildozer/android/platform/recipes-sources
-          cp -r p4a-recipes/* ~/.buildozer/android/platform/recipes-sources/ 2>/dev/null || true
-          ls -la ~/.buildozer/android/platform/recipes-sources/ || echo "Recipe copy failed, will try alternate method"
-          
           # Pre-accept licenses one more time during build
           mkdir -p ~/.android/licenses
           echo "d56f5187479451eabf01fb78af6dfcb131b33910" > ~/.android/licenses/android-sdk-license
