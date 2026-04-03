@@ -14,7 +14,7 @@ from .chunker  import process_document
 from .db       import insert_chunks
 from .retriever import HybridRetriever
 from .llm      import llm, build_rag_prompt, build_direct_prompt, list_available_models
-from .downloader import auto_download_default, model_dest_path, QWEN_MODEL, NOMIC_MODEL
+from .downloader import auto_download_default, model_dest_path, QWEN_MODEL, CLIP_MODEL
 from .memory_manager import get_memory_manager, MemoryAwareRetriever
 from .model_config import get_device_preset, model_is_multimodal, LLM_MODELS, EMBEDDING_MODELS
 
@@ -82,14 +82,14 @@ def _start_auto_download() -> None:
     def _done(success: bool, _msg: str):
         """Called when BOTH models are ready on disk."""
         qwen_path  = model_dest_path(QWEN_MODEL["filename"])
-        nomic_path = model_dest_path(NOMIC_MODEL["filename"])
+        clip_path = model_dest_path(CLIP_MODEL["filename"])
 
         if not success:
             if _auto_dl_done_cb:
                 _auto_dl_done_cb(False, _msg)
             return
 
-        # ── Load Qwen for generation only — Nomic starts lazily on first PDF ─ #
+        # ── Load Qwen for generation only — CLIP starts lazily on first PDF ─ #
         if not llm.is_loaded():
             load_model(
                 qwen_path,
@@ -99,7 +99,7 @@ def _start_auto_download() -> None:
                 ),
             )
         elif _auto_dl_done_cb:
-            _auto_dl_done_cb(True, "Models ready: Qwen + Nomic")
+            _auto_dl_done_cb(True, "Models ready: Qwen + CLIP")
 
     auto_download_default(on_progress=_progress, on_done=_done)
 
@@ -119,15 +119,15 @@ def ingest_document(
     """
     def _run():
         try:
-            # Lazy-start Nomic server — only needed when indexing documents.
+            # Lazy-start CLIP server — only needed when indexing documents.
             # Starting it at app launch wastes ~300 MB RAM on devices that
             # never upload a PDF.
             import os
-            nomic_path = model_dest_path(NOMIC_MODEL["filename"])
-            if os.path.isfile(nomic_path):
+            clip_path = model_dest_path(CLIP_MODEL["filename"])
+            if os.path.isfile(clip_path):
                 from .llm import start_nomic_server, _probe_port, _NOMIC_PORT
                 if not _probe_port(_NOMIC_PORT):
-                    start_nomic_server(nomic_path)
+                    start_nomic_server(clip_path)
 
             name = Path(file_path).name
             doc_id = insert_document(name, file_path)
