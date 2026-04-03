@@ -7,176 +7,162 @@ on:
   workflow_dispatch:
 
 env:
-  BUILDOZER_ANDROID_ACCEPT_SDK_LICENSE: '1'
-  BUILDOZER_LOG_LEVEL: 2
+  BUILDOZER_ANDROID_ACCEPT_SDK_LICENSE: 1
+  ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
+  ANDROID_NDK_ROOT: ${{ runner.temp }}/android-ndk
 
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 180
-    permissions:
-      contents: write
     
     steps:
       - uses: actions/checkout@v4
         with:
           ref: v3
-          fetch-depth: 0
-
-      - name: Set up Python 3.11
+          
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
-      - name: Set up JDK 17
+          
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-
+          
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             git zip unzip autoconf libtool pkg-config \
             zlib1g-dev libncurses5-dev libncursesw5-dev \
-            cmake libffi-dev libssl-dev libpng-dev expect
-
-      - name: Install Python build tools
+            cmake libffi-dev libssl-dev libpng-dev \
+            expect xvfb ccache
+            
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          pip install "cython==0.29.37" buildozer pycryptodome
-
-      - name: Install project dependencies
-        run: |
-          pip install -r requirements.txt || echo "Main requirements installed"
-          pip install -r requirements_mobile.txt || echo "Mobile requirements installed"
-
-      - name: Pre-accept Android SDK licenses
-        run: |
-          echo "Creating Android license files in all expected locations..."
+          pip install "cython==0.29.37"
+          pip install buildozer pycryptodome
+          pip install -r requirements.txt 2>&1 | tail -20 || true
           
-          # Create ~/.android/licenses
+      - name: Accept Android licenses
+        run: |
           mkdir -p ~/.android/licenses
           echo "d56f5187479451eabf01fb78af6dfcb131b33910" > ~/.android/licenses/android-sdk-license
           echo "504667f4c0de7973335447fc6c3b3d07e678066c" > ~/.android/licenses/android-sdk-preview-license
-          
+          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > ~/.android/licenses/android-sdk-preview-license-old
           chmod 644 ~/.android/licenses/*
-          echo "✓ License files created"
           ls -la ~/.android/licenses/
           
-          export ANDROID_LICENSES=true
-
-      - name: Build APK with automatic license acceptance
+      - name: Set up ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-${{ runner.os }}-${{ github.run_number }}
+          restore-keys: ccache-${{ runner.os }}-
+          
+      - name: Cache buildozer packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.buildozer
+            /tmp/.buildozer
+          key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
+          restore-keys: buildozer-${{ runner.os }}-
+          
+      - name: Build APK
         run: |
-          rm -rf .buildozer bin dist 2>/dev/null || true
+          set +e
+          
+          echo "=========================================="
+          echo "Building O-RAG APK - Run #${{ github.run_number }}"
+          echo "=========================================="
+          echo ""
+          
+          # Clean build directories
+          rm -rf .buildozer dist bin *.log 2>/dev/null || true
           mkdir -p bin
           
+          # Export environment variables for license acceptance
+          export BUILDOZER_ANDROID_ACCEPT_SDK_LICENSE=1
           export ANDROID_SDK_ROOT=$HOME/Android/Sdk
           export ANDROID_NDK_ROOT=$HOME/Android/Ndk
-          export BUILDOZER_ANDROID_ACCEPT_SDK_LICENSE=1
           
-          echo "======================================"
-          echo "APK Build #${{ github.run_number }}"
-          echo "======================================"
-          echo "Using Python: $(python --version)"
-          echo ""
-          
-          # Ensure licenses exist before buildozer runs
+          # Pre-accept licenses one more time during build
           mkdir -p ~/.android/licenses
           echo "d56f5187479451eabf01fb78af6dfcb131b33910" > ~/.android/licenses/android-sdk-license
-          echo "504667f4c0de7973335447fc6c3b3d07e678066c" > ~/.android/licenses/android-sdk-preview-license
           
-          # Create expect script to handle interactive prompts
-          cat > /tmp/buildozer_expect.exp << 'EOF'
-          #!/usr/bin/expect -f
-          set timeout 5400
-          set cmd "buildozer android release -v"
+          # Create wrapper script to auto-accept all prompts
+          cat > run_buildozer.sh << 'SCRIPT'
+          #!/bin/bash
+          (
+            echo y
+            echo y
+            echo y
+            sleep 2
+            yes
+          ) | buildozer android release -v 2>&1
+          SCRIPT
+          chmod +x run_buildozer.sh
           
-          spawn bash -c $cmd
-          
-          # Handle all yes/no prompts
-          expect {
-            -re "Accept\?" {send "y\r"; exp_continue}
-            -re "y/N" {send "y\r"; exp_continue}
-            -re "Do you" {send "y\r"; exp_continue}
-            eof {catch wait result; exit [lindex $result 3]}
-          }
-          EOF
-          
-          chmod +x /tmp/buildozer_expect.exp
-          
-          # Run buildozer with expect for reliable prompt handling
-          echo "Starting build with expect-based license acceptance..."
-          expect /tmp/buildozer_expect.exp 2>&1 | tee build.log
-          BUILD_EXIT=${PIPESTATUS[0]}
+          # Run build with timeout and automatic responses
+          timeout 5400 ./run_buildozer.sh | tee buildozer.log
+          BUILD_EXIT=$?
           
           echo ""
-          echo "Build finished with exit code: $BUILD_EXIT"
+          echo "Build process exit code: $BUILD_EXIT"
           
-          # Check if APK was actually generated (success indicator)
-          if find . -name "*release*.apk" ! -path "./.buildozer/cache/*" 2>/dev/null | grep -q .; then
-            echo "✓ APK FILE FOUND - BUILD SUCCESSFUL"
-            echo "BUILD_SUCCESS=true" >> $GITHUB_ENV
-          elif [ $BUILD_EXIT -eq 0 ]; then
-            echo "✓ BUILD EXITED CLEANLY (exit code 0)"
-            echo "BUILD_SUCCESS=true" >> $GITHUB_ENV
-          else
-            echo "✗ BUILD FAILED with exit code $BUILD_EXIT"
-            echo "BUILD_SUCCESS=false" >> $GITHUB_ENV
-            echo ""
-            echo "=== Last 40 lines of build log ==="
-            tail -40 build.log
-          fi
-
-      - name: Locate and verify APK
+      - name: Find and stage APK
+        if: always()
         run: |
-          echo "=== Searching for APK files ==="
+          mkdir -p release
           
-          # Create staging directory
-          mkdir -p apk-release
+          echo "Searching for APK files..."
+          echo ""
           
-          # Find all APK files (various locations)
-          find . -name "*release*.apk" -type f ! -path "./.buildozer/cache/*" -exec cp {} apk-release/ \; 2>/dev/null || true
-          find . -name "orag*.apk" -type f ! -path "./.buildozer/cache/*" -exec cp {} apk-release/ \; 2>/dev/null || true
-          
-          # Search specifically in buildozer dist directories
-          find .buildozer -type d -name "dist" 2>/dev/null | while read dist_dir; do
-            echo "Checking dist dir: $dist_dir"
-            find "$dist_dir" -name "*.apk" -type f -exec cp {} apk-release/ \; 2>/dev/null || true
+          # Search in all possible locations
+          find . -name "*.apk" -type f ! -path "./.git/*" ! -path "./.buildozer/cache/*" -print0 2>/dev/null | while IFS= read -r -d '' file; do
+            echo "Found: $file"
+            cp "$file" release/
           done
           
-          # List what we found
           echo ""
-          echo "APK files in staging directory:"
-          if [ -f apk-release/*.apk ]; then
-            ls -lh apk-release/*.apk
-            APK_COUNT=$(find apk-release -name "*.apk" 2>/dev/null | wc -l)
-            echo "Total APKs found: $APK_COUNT"
-            echo "APK_FOUND=true" >> $GITHUB_ENV
+          echo "APKs in staging directory:"
+          ls -lh release/ 2>/dev/null || echo "No APKs found!"
+          
+          # Save exit code for later
+          if [ -f release/*.apk ]; then
+            echo "APK_FOUND=1" >> $GITHUB_ENV
+            ls -1 release/*.apk | head -1 | xargs -I {} basename {} | tee apk_name.txt
           else
-            echo "❌ NO APK FILES FOUND"
-            echo "APK_FOUND=false" >> $GITHUB_ENV
+            echo "APK_FOUND=0" >> $GITHUB_ENV
+            echo "No APK found in release directory"
             echo ""
-            echo "=== Build directory contents ==="
-            find . -maxdepth 3 -name "*.apk" 2>/dev/null | head -10 || echo "No APKs found anywhere"
+            echo "Directory structure:"
+            find . -maxdepth 4 -type d -name "dist" -o -name "bin" | head -5
+            echo ""
+            echo "Last 50 lines of buildozer log:"
+            tail -50 buildozer.log 2>/dev/null || echo "No log found"
           fi
-
-      - name: Upload APK as GitHub Artifact
-        if: env.APK_FOUND == 'true'
+          
+      - name: Upload APK artifact
+        if: env.APK_FOUND == '1'
         uses: actions/upload-artifact@v4
         with:
-          name: orag-release-apk-${{ github.run_number }}
-          path: apk-release/*.apk
+          name: orag-apk-${{ github.run_number }}
+          path: release/
           retention-days: 30
-          if-no-files-found: warn
-
+          if-no-files-found: error
+          
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: build-log-${{ github.run_number }}
-          path: build.log
+          path: buildozer.log
           retention-days: 7
           if-no-files-found: ignore
 
