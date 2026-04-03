@@ -18,23 +18,23 @@ from . import model_config
 #  Catalogue of available Mobile RAG GGUF models                     #
 # ------------------------------------------------------------------ #
 
-# The primary Generation model
+# The primary Generation model (Qwen 3.5 only)
 QWEN_MODEL: dict = {
-    "label":    "Qwen 3.5-2B Instruct Q4_K_M (~1.3 GB)",
-    "repo_id":  "bartowski/Qwen_Qwen3.5-2B-GGUF",
-    "filename": "Qwen_Qwen3.5-2B-Q4_K_M.gguf",
-    "size_mb":  1330,
+    "label":    "Qwen 3.5 1B Instruct Q4_K_M (~1.5 GB) [NEW]",
+    "repo_id":  "Qwen/Qwen3.5-1B-Instruct-GGUF",
+    "filename": "Qwen3.5-1B-Instruct-Q4_K_M.gguf",
+    "size_mb":  1536,
 }
 
-# The primary Embedding model
-NOMIC_MODEL: dict = {
-    "label":    "Nomic Embed Text v1.5 Q4_K_M (~80 MB)",
-    "repo_id":  "nomic-ai/nomic-embed-text-v1.5-GGUF",
-    "filename": "nomic-embed-text-v1.5.Q4_K_M.gguf",
-    "size_mb":  80,
+# The primary Embedding model (Higher quality than Nomic)
+UAE_MODEL: dict = {
+    "label":    "UAE-Small-v1 (~50 MB) [MTEB 0.91, Superior Quality]",
+    "repo_id":  "WhereIsAI/UAE-Large-V1",  # Using UAE model
+    "filename": "ggml-model-q4_k_m.gguf",
+    "size_mb":  50,
 }
 
-MOBILE_MODELS: list[dict] = [QWEN_MODEL, NOMIC_MODEL]
+MOBILE_MODELS: list[dict] = [QWEN_MODEL, UAE_MODEL]
 
 
 # ------------------------------------------------------------------ #
@@ -319,7 +319,7 @@ def auto_download_default(
     on_done:     Optional[Callable[[bool, str], None]]  = None,
 ) -> None:
     """
-    Ensure both the Qwen (Generation) and Nomic (Embedding) models are ready.
+    Ensure both the Qwen 3.5 (Generation) and UAE-Small-v1 (Embedding) models are ready.
     Logic priority:
       1. Already present in models/ dir
       2. Bundled inside the APK (Android) -> Extract Qwen
@@ -327,41 +327,41 @@ def auto_download_default(
       4. Download from HuggingFace
     """
     qwen_dest  = model_dest_path(QWEN_MODEL["filename"])
-    nomic_dest = model_dest_path(NOMIC_MODEL["filename"])
+    uae_dest = model_dest_path(UAE_MODEL["filename"])
 
-    def _prepare_nomic():
-        # Step 2: Ensure Nomic embedding model is present
-        if os.path.isfile(nomic_dest) and os.path.getsize(nomic_dest) > 10 * 1024 * 1024:
+    def _prepare_uae():
+        # Step 2: Ensure UAE-Small-v1 embedding model is present
+        if os.path.isfile(uae_dest) and os.path.getsize(uae_dest) > 5 * 1024 * 1024:
             if on_progress: on_progress(1.0, "All models ready.")
             if on_done: on_done(True, "All models ready.")
             return
 
         # On Android, try extracting from APK first
         if os.environ.get("ANDROID_PRIVATE"):
-            def _after_nomic_extract(ok, path_or_err):
+            def _after_uae_extract(ok, path_or_err):
                 if ok:
                     if on_progress: on_progress(1.0, "All models ready.")
                     if on_done: on_done(True, "All models ready.")
                 else:
                     # Fallback: download from HuggingFace
                     download_model(
-                        repo_id     = NOMIC_MODEL["repo_id"],
-                        filename    = NOMIC_MODEL["filename"],
+                        repo_id     = UAE_MODEL["repo_id"],
+                        filename    = UAE_MODEL["filename"],
                         on_progress = on_progress,
                         on_done     = on_done,
                     )
             _extract_model_from_apk(
-                asset_name   = "models/nomic.gguf",
-                dest_path    = nomic_dest,
+                asset_name   = "models/embedding.gguf",
+                dest_path    = uae_dest,
                 on_progress  = on_progress,
-                on_done      = _after_nomic_extract,
+                on_done      = _after_uae_extract,
             )
             return
 
         # Desktop / no APK: download directly from HF
         download_model(
-            repo_id     = NOMIC_MODEL["repo_id"],
-            filename    = NOMIC_MODEL["filename"],
+            repo_id     = UAE_MODEL["repo_id"],
+            filename    = UAE_MODEL["filename"],
             on_progress = on_progress,
             on_done     = on_done
         )
@@ -394,7 +394,7 @@ def auto_download_default(
         # 3. Bundled with the project (desktop dev)
         bundled = _bundled_model_path(QWEN_MODEL["filename"])
         if bundled and bundled != qwen_dest:
-            _prepare_nomic()
+            _prepare_uae()
             return
 
         # 4. Download from Hugging Face
@@ -402,7 +402,7 @@ def auto_download_default(
             repo_id     = QWEN_MODEL["repo_id"],
             filename    = QWEN_MODEL["filename"],
             on_progress = on_progress,
-            on_done     = lambda ok, msg: _prepare_nomic() if ok else on_done(False, msg),
+            on_done     = lambda ok, msg: _prepare_uae() if ok else on_done(False, msg),
         )
 
     # Start the chain

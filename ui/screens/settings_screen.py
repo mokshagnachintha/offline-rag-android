@@ -23,7 +23,7 @@ from kivy.graphics import Color, RoundedRectangle
 # ── Material Design 3 Theme ──────────────────────────────────────── #
 from ui.theme import MD3Colors, MD3Spacing, MD3Radius, MD3Typography, paint_widget, MD3Button
 
-from rag.downloader import MOBILE_MODELS as GEMMA_MODELS, is_downloaded, download_model
+from rag.downloader import MOBILE_MODELS, is_downloaded, download_model
 
 
 # ------------------------------------------------------------------ #
@@ -295,7 +295,7 @@ class SettingsScreen(Screen):
         )
         self._list.bind(minimum_height=self._list.setter("height"))
 
-        for meta in GEMMA_MODELS:
+        for meta in MOBILE_MODELS:
             row = ModelRow(meta, on_load=self._load_model)
             self._rows.append(row)
             self._list.add_widget(row)

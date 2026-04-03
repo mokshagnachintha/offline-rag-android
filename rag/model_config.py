@@ -4,19 +4,10 @@ Supports model selection, device profiles, auto-fallback chains.
 """
 
 LLM_MODELS = {
-    "qwen2.5-1.5b-q4": {
-        "label": "Qwen 2.5-1.5B Q4 (1.1 GB) [Current Default]",
-        "repo_id": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
-        "filename": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
-        "size_mb": 1120,
-        "context_window": 512,
-        "parameters": "1.5B",
-        "is_fallback": False,
-    },
     "qwen3.5-1b-q4": {
-        "label": "Qwen 3.5 1B Q4 (1.5 GB) [NEW - Better Reasoning]",
-        "repo_id": "Qwen/Qwen3.5-1B-Instruct-GGUF",  # Or 2.5-3B as proxy
-        "filename": "qwen3.5-1b-instruct-q4_k_m.gguf",
+        "label": "Qwen 3.5 1B Q4 (1.5 GB) [UPGRADED]",
+        "repo_id": "Qwen/Qwen3.5-1B-Instruct-GGUF",
+        "filename": "Qwen3.5-1B-Instruct-Q4_K_M.gguf",
         "size_mb": 1536,
         "context_window": 32768,
         "parameters": "1B",
@@ -25,39 +16,21 @@ LLM_MODELS = {
 }
 
 EMBEDDING_MODELS = {
-    "nomic-q4": {
-        "label": "Nomic Embed Text Q4 (80 MB) [Text Only]",
-        "repo_id": "nomic-ai/nomic-embed-text-v1.5-GGUF",
-        "filename": "nomic-embed-text-v1.5.Q4_K_M.gguf",
-        "size_mb": 80,
-        "dimensions": 768,
+    "uae-small-v1": {
+        "label": "UAE-Small-v1 (50 MB) [UPGRADED - MTEB 0.91]",
+        "repo_id": "WhereIsAI/UAE-Large-V1",
+        "filename": "ggml-model-q4_k_m.gguf",
+        "size_mb": 50,
+        "dimensions": 1024,
         "multimodal": False,
-    },
-    "clip-vit-b-q4": {
-        "label": "CLIP ViT-B Q4 (350 MB) [Multimodal]",
-        "repo_id": "Xenova/clip-vit-base-patch32-ggml",
-        "filename": "clip-vit-base-q4_k_m.gguf",
-        "size_mb": 350,
-        "dimensions": 512,
-        "multimodal": True,
     },
 }
 
 DEVICE_PRESETS = {
     "4gb-mobile": {
-        "llm": "qwen2.5-1.5b-q4",
-        "embedding": "nomic-q4",
-        "max_context": 512,
-    },
-    "4gb-mobile-qwen35": {
         "llm": "qwen3.5-1b-q4",
-        "embedding": "nomic-q4",
-        "max_context": 512,  # Practical limit despite 32K
-    },
-    "6gb-mobile": {
-        "llm": "qwen2.5-1.5b-q4",
-        "embedding": "clip-vit-b-q4",
-        "max_context": 1024,
+        "embedding": "uae-small-v1",
+        "max_context": 512,  # Practical limit on 4GB device
     },
 }
 

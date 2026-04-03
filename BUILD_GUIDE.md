@@ -33,15 +33,15 @@ python verify_build.py
 ```
 
 ### Step 3: Model Files Present
-- [ ] `nomic-embed-text-v1.5.Q4_K_M.gguf` exists (500MB+)
-- [ ] `qwen2.5-1.5b-instruct-q4_k_m.gguf` exists (1.5GB+)
+- [ ] `ggml-model-q4_k_m.gguf` exists (from UAE-Small-v1, ~50MB)
+- [ ] `Qwen3.5-1B-Instruct-Q4_K_M.gguf` exists (1.5GB+)
 - [ ] Files in project root directory
 - [ ] Models NOT in .gitignore (or included in buildozer spec)
 
 **Check with**:
 ```bash
 ls -lh *.gguf
-# Expected: Two files, 2GB+ total
+# Expected: Two files, 1.6GB+ total
 ```
 
 ### Step 4: Build Configuration Review

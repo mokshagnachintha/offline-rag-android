@@ -10,8 +10,8 @@ from rag.retriever import HybridRetriever
 from rag.llm       import LlamaCppModel, build_rag_prompt
 
 # Use the models natively downloaded to the workspace
-model_path = "qwen2.5-1.5b-instruct-q4_k_m.gguf"
-embed_path = "nomic-embed-text-v1.5.Q4_K_M.gguf"
+model_path = "Qwen3.5-1B-Instruct-Q4_K_M.gguf"
+embed_path = "ggml-model-q4_k_m.gguf"
 
 # A dummy path for testing. Replace with a real path if you want to test RAG!
 doc_path   = "requirements.txt"
