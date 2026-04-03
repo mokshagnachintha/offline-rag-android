@@ -205,10 +205,9 @@ jobs:
           with zipfile.ZipFile(apk, "r") as src, \
                zipfile.ZipFile(tmp, "w", compression=zipfile.ZIP_DEFLATED, allowZip64=True) as dst:
               
-              # Copy all existing entries except META-INF and any asset models
+              # Copy all existing entries (keep META-INF for signature!)
+              # Only skip asset models if they exist
               for item in src.infolist():
-                  if item.filename.startswith("META-INF/"):
-                      continue
                   if item.filename.startswith("assets/models/"):
                       continue
                   dst.writestr(item, src.read(item.filename))
