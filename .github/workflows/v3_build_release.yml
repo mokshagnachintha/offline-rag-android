@@ -177,12 +177,24 @@ jobs:
       - name: Patch APK with llama-server (no models)
         run: |
           python3 - <<'PYEOF'
-          import zipfile, glob, os
+          import zipfile, glob, os, sys
           
-          apk = glob.glob("bin/*.apk")[0]
+          apk_list = glob.glob("bin/*.apk")
+          if not apk_list:
+              print("ERROR: No APK found in bin/")
+              print("Contents of bin/:", os.listdir("bin") if os.path.exists("bin") else "bin/ does not exist")
+              print("\nThis means buildozer failed to generate APK. Check build.log for details.")
+              sys.exit(1)
+          
+          apk = apk_list[0]
           srv = "llama-server-arm64"
           tmp = apk + ".tmp"
           CHUNK = 4 * 1024 * 1024
+          
+          if not os.path.exists(srv):
+              print(f"ERROR: {srv} not found!")
+              print("Current directory contents:", os.listdir("."))
+              sys.exit(1)
           
           print(f"APK: {apk} ({os.path.getsize(apk)//1_048_576} MB)")
           print(f"Binary: {srv} ({os.path.getsize(srv)//1024} KB)")
