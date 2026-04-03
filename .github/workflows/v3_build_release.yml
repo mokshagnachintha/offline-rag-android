@@ -69,7 +69,6 @@ jobs:
 
       - name: Build APK with automatic license acceptance
         run: |
-          set -e
           rm -rf .buildozer bin dist 2>/dev/null || true
           mkdir -p bin
           
@@ -90,48 +89,62 @@ jobs:
           
           # Run buildozer with 'yes' piping all 'y' responses to license prompts
           echo "Starting build with automatic license acceptance..."
-          (yes 2>/dev/null || true) | timeout 5400 buildozer android release -v 2>&1 | tee build.log || BUILD_EXIT=$?
-          BUILD_EXIT=${BUILD_EXIT:-0}
+          (yes 2>/dev/null || true) | timeout 5400 buildozer android release -v 2>&1 | tee build.log
+          BUILD_EXIT=$?
           
           echo ""
           echo "Build finished with exit code: $BUILD_EXIT"
           
-          if [ $BUILD_EXIT -eq 0 ] || grep -q "orag.*release.*apk" build.log; then
-            echo "✓ BUILD SUCCESSFUL"
+          # Check if APK was actually generated (success indicator)
+          if find . -name "*release*.apk" ! -path "./.buildozer/cache/*" 2>/dev/null | grep -q .; then
+            echo "✓ APK FILE FOUND - BUILD SUCCESSFUL"
+            echo "BUILD_SUCCESS=true" >> $GITHUB_ENV
+          elif [ $BUILD_EXIT -eq 0 ]; then
+            echo "✓ BUILD EXITED CLEANLY (exit code 0)"
             echo "BUILD_SUCCESS=true" >> $GITHUB_ENV
           else
-            echo "✗ BUILD FAILED"
+            echo "✗ BUILD FAILED with exit code $BUILD_EXIT"
             echo "BUILD_SUCCESS=false" >> $GITHUB_ENV
             echo ""
-            echo "=== Error summary ==="
-            grep -i "error\|failed\|accept\|aidl" build.log | head -20 || echo "No specific errors found"
+            echo "=== Last 30 lines of build log ==="
+            tail -30 build.log
           fi
 
       - name: Locate and verify APK
-        if: env.BUILD_SUCCESS == 'true'
         run: |
           echo "=== Searching for APK files ==="
           
           # Create staging directory
           mkdir -p apk-release
           
-          # Find all APK files
-          find . -name "*.apk" -type f ! -path "./.buildozer/cache/*" -exec cp {} apk-release/ \;
+          # Find all APK files (various locations)
+          find . -name "*release*.apk" -type f ! -path "./.buildozer/cache/*" -exec cp {} apk-release/ \; 2>/dev/null || true
+          find . -name "orag*.apk" -type f ! -path "./.buildozer/cache/*" -exec cp {} apk-release/ \; 2>/dev/null || true
           
-          # Find in dist directories
+          # Search specifically in buildozer dist directories
           find .buildozer -type d -name "dist" 2>/dev/null | while read dist_dir; do
-            find "$dist_dir" -name "*.apk" -exec cp {} apk-release/ \;
+            echo "Checking dist dir: $dist_dir"
+            find "$dist_dir" -name "*.apk" -type f -exec cp {} apk-release/ \; 2>/dev/null || true
           done
           
-          echo "APKs found:"
-          ls -lh apk-release/ || echo "No APKs found!"
-          
-          # Count for later
-          APK_COUNT=$(find apk-release -name "*.apk" 2>/dev/null | wc -l)
-          echo "APK_COUNT=$APK_COUNT" >> $GITHUB_ENV
+          # List what we found
+          echo ""
+          echo "APK files in staging directory:"
+          if [ -f apk-release/*.apk ]; then
+            ls -lh apk-release/*.apk
+            APK_COUNT=$(find apk-release -name "*.apk" 2>/dev/null | wc -l)
+            echo "Total APKs found: $APK_COUNT"
+            echo "APK_FOUND=true" >> $GITHUB_ENV
+          else
+            echo "❌ NO APK FILES FOUND"
+            echo "APK_FOUND=false" >> $GITHUB_ENV
+            echo ""
+            echo "=== Build directory contents ==="
+            find . -maxdepth 3 -name "*.apk" 2>/dev/null | head -10 || echo "No APKs found anywhere"
+          fi
 
       - name: Upload APK as GitHub Artifact
-        if: env.BUILD_SUCCESS == 'true'
+        if: env.APK_FOUND == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: orag-release-apk-${{ github.run_number }}
