@@ -64,7 +64,7 @@ class MetricCard(BoxLayout):
             height=dp(120),
             **kw,
         )
-        _paint(self, MD3Colors.SURFACE_VARIANT, radius=MD3Radius.LARGE)
+        _paint(self, MD3Colors.SURFACE_VARIANT, radius=MD3Radius.LG)
         
         # Status indicator color
         status_color = {
@@ -122,7 +122,7 @@ class HealthStatusCard(BoxLayout):
             spacing=MD3Spacing.MD,
             **kw,
         )
-        _paint(self, MD3Colors.SECONDARY, radius=MD3Radius.LARGE)
+        _paint(self, MD3Colors.SECONDARY, radius=MD3Radius.LG)
         
         # Header
         header = Label(
@@ -227,7 +227,7 @@ class SessionStatsCard(BoxLayout):
             spacing=MD3Spacing.MD,
             **kw,
         )
-        _paint(self, MD3Colors.TERTIARY, radius=MD3Radius.LARGE)
+        _paint(self, MD3Colors.TERTIARY, radius=MD3Radius.LG)
         
         # Header
         header = Label(
@@ -427,7 +427,7 @@ class AnalyticsDashboardScreen(Screen):
             background_normal="", background_color=MD3Colors.PRIMARY,
             color=MD3Colors.ON_PRIMARY,
         )
-        _paint(export_btn, MD3Colors.PRIMARY, radius=MD3Radius.LARGE)
+        _paint(export_btn, MD3Colors.PRIMARY, radius=MD3Radius.LG)
         export_btn.bind(on_release=self._on_export)
         
         export_box = BoxLayout(

@@ -152,7 +152,7 @@ class DocsScreen(Screen):
             background_color = _GREEN,
             color            = _WHITE,
         )
-        _paint(browse_btn, _GREEN, radius=MD3Radius.LARGE)
+        _paint(browse_btn, _GREEN, radius=MD3Radius.LG)
         browse_btn.bind(on_release=self._on_browse)
         browse_row.add_widget(browse_btn)
         bar.add_widget(browse_row)
