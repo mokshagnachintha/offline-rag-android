@@ -146,36 +146,6 @@ jobs:
           
           echo "llama-server-arm64: $(du -sh llama-server-arm64)"
 
-      - name: Download GGUF models
-        run: |
-          pip install huggingface-hub --quiet
-          python3 - <<'PYEOF'
-          import os
-          from huggingface_hub import hf_hub_download
-          
-          # Qwen 2.5 3B generation model - download for reference/testing only
-          # NOTE: Not bundled in APK; app downloads on first launch
-          qwen_path = hf_hub_download(
-              repo_id="bartowski/Qwen2.5-3B-Instruct-GGUF",
-              filename="Qwen2.5-3B-Instruct-Q4_K_M.gguf",
-              local_dir="model_cache",
-              local_dir_use_symlinks=False,
-          )
-          print(f"Qwen 2.5 3B (reference): {os.path.getsize(qwen_path)//1_048_576} MB")
-          
-          # UAE-Small-v1 embedding model - download for reference/testing only
-          uae_path = hf_hub_download(
-              repo_id="Xenova/clip-vit-base-patch32-ggml",
-              filename="ggml-model-q4_k_m.gguf",
-              local_dir="model_cache",
-              local_dir_use_symlinks=False,
-          )
-          print(f"CLIP ViT-B32 Multimodal (reference): {os.path.getsize(uae_path)//1_048_576} MB")
-          
-          print("\nNOTE: Models are NOT bundled in APK.")
-          print("App will download to device storage on first launch.")
-          PYEOF
-
       - name: Patch APK with llama-server (no models)
         run: |
           python3 - <<'PYEOF'
