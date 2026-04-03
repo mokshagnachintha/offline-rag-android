@@ -5,12 +5,12 @@ Supports model selection, device profiles, auto-fallback chains.
 
 LLM_MODELS = {
     "qwen2.5-3b-q4": {
-        "label": "Qwen 2.5 3B Q4 (2.1 GB) [UPGRADED]",
-        "repo_id": "bartowski/Qwen2.5-3B-Instruct-GGUF",
-        "filename": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
-        "size_mb": 2150,
+        "label": "Qwen 3.5 2B Q4 (1.3 GB) [Personal Repo]",
+        "repo_id": "mokshagna21/orag-qwen-3.5-2b-gguf",
+        "filename": "Qwen_Qwen3.5-2B-Q4_K_M.gguf",
+        "size_mb": 1280,
         "context_window": 32768,
-        "parameters": "3B",
+        "parameters": "2B",
         "is_fallback": False,
     },
 }

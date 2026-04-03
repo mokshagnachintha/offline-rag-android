@@ -10,7 +10,7 @@ from rag.retriever import HybridRetriever
 from rag.llm       import LlamaCppModel, build_rag_prompt
 
 # Use the models natively downloaded to the workspace
-model_path = "Qwen2.5-3B-Instruct-Q4_K_M.gguf"
+model_path = "Qwen_Qwen3.5-2B-Q4_K_M.gguf"
 embed_path = "ggml-model-q4_k_m.gguf"  # CLIP ViT-B32 multimodal
 
 # A dummy path for testing. Replace with a real path if you want to test RAG!
