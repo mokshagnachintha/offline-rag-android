@@ -244,6 +244,34 @@ jobs:
                   print(f"  ✓ No models embedded (will download on first app launch)")
           PYEOF
 
+      - name: Re-sign patched APK
+        run: |
+          # Find debug keystore or create one
+          KEYSTORE="$HOME/.android/debug.keystore"
+          if [ ! -f "$KEYSTORE" ]; then
+            echo "Creating debug keystore..."
+            keytool -genkey -v -keystore "$KEYSTORE" -keyalg RSA -keysize 2048 \
+              -validity 10000 -alias androiddebugkey \
+              -storepass android -keypass android \
+              -dname "CN=Android, OU=Android, O=Android, L=Android, S=Android, C=US"
+          fi
+          
+          # Find apksigner
+          APKSIGNER=$(find ~/.buildozer/android/platform -name "apksigner.jar" 2>/dev/null | head -1)
+          if [ -z "$APKSIGNER" ]; then
+            echo "WARNING: apksigner not found, trying jarsigner instead..."
+            APK=$(find bin -name "*.apk" -type f | head -1)
+            jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 \
+              -keystore "$KEYSTORE" -storepass android -keypass android \
+              "$APK" androiddebugkey
+          else
+            echo "Using apksigner to re-sign APK..."
+            APK=$(find bin -name "*.apk" -type f | head -1)
+            java -jar "$APKSIGNER" sign --ks "$KEYSTORE" --ks-pass pass:android "$APK"
+          fi
+          
+          echo "APK re-signed successfully"
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
