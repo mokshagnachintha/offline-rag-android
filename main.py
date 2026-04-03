@@ -6,9 +6,19 @@ Single-screen design: one chat interface.
   • Otherwise chat freely with the AI
   • Model is bundled in the APK — extracted to device storage on first launch
 """
+import os
+import sys
+
+# Write startup marker to crash log for diagnostics
+_startup_log = os.path.expanduser("~/.orag.startup.log")
+try:
+    with open(_startup_log, "a") as f:
+        import datetime
+        f.write(f"\n=== APP STARTUP {datetime.datetime.now()} ===\n")
+except:
+    pass
 
 # ── Kivy config BEFORE any other kivy import ──────────────────────── #
-import os
 os.environ.setdefault("KIVY_LOG_LEVEL", "warning")
 
 from kivy.config import Config
@@ -29,25 +39,50 @@ import sys
 import traceback
 sys.path.insert(0, os.path.dirname(__file__))
 
-from ui.screens.chat_screen import ChatScreen
-from ui.screens.init_screen import InitScreen, init_screen_with_downloads
-from ui.screens.analytics_dashboard import AnalyticsDashboardScreen
-from rag.pipeline           import init
-from rag.downloader import is_downloaded, QWEN_MODEL, NOMIC_MODEL
+# Log each import for diagnostics
+_import_log = lambda msg: print(f"[IMPORT] {msg}")
+
+try:
+    _import_log("Loading UI screens...")
+    from ui.screens.chat_screen import ChatScreen
+    from ui.screens.init_screen import InitScreen, init_screen_with_downloads
+    from ui.screens.analytics_dashboard import AnalyticsDashboardScreen
+    
+    _import_log("Loading RAG pipeline...")
+    from rag.pipeline           import init
+    _import_log("Loading downloader...")
+    from rag.downloader import is_downloaded, QWEN_MODEL, NOMIC_MODEL
+    _import_log("Core imports successful")
+except ImportError as e:
+    _import_log(f"IMPORT ERROR: {e}")
+    traceback.print_exc()
+    raise
 
 # Analytics setup
 try:
+    _import_log("Loading analytics...")
     from analytics import start_continuous_monitoring
-except ImportError:
+except ImportError as e:
+    _import_log(f"Analytics not available: {e}")
     def start_continuous_monitoring(*args, **kwargs):
         pass  # Graceful fallback
+except Exception as e:
+    _import_log(f"Analytics load failed: {e}")
+    def start_continuous_monitoring(*args, **kwargs):
+        pass
 
 # Memory optimization setup
 try:
+    _import_log("Loading memory manager...")
     from rag.memory_manager import start_memory_optimization
-except ImportError:
+except ImportError as e:
+    _import_log(f"Memory manager not available: {e}")
     def start_memory_optimization(*args, **kwargs):
         pass  # Graceful fallback
+except Exception as e:
+    _import_log(f"Memory manager load failed: {e}")
+    def start_memory_optimization(*args, **kwargs):
+        pass
 
 
 def _global_exception_handler(exc_type, exc_value, exc_tb):

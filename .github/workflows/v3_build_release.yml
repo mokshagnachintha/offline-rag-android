@@ -272,6 +272,32 @@ jobs:
           
           echo "APK re-signed successfully"
 
+      - name: Verify APK structure
+        run: |
+          python3 - <<'PYEOF'
+          import zipfile, os
+          apks = [f for f in os.listdir("bin") if f.endswith(".apk")]
+          if not apks:
+              print("ERROR: No APK found!")
+              exit(1)
+          apk = os.path.join("bin", apks[0])
+          with zipfile.ZipFile(apk, 'r') as z:
+              print(f"APK: {apk} ({os.path.getsize(apk)//1_048_576}MB)")
+              print(f"Files: {len(z.namelist())}")
+              has_llama = any("libllama_server" in n for n in z.namelist())
+              has_manifest = "AndroidManifest.xml" in z.namelist()
+              print(f"  ✓ llama-server binary" if has_llama else "  ✗ MISSING: llama-server binary")
+              print(f"  ✓ AndroidManifest.xml" if has_manifest else "  ✗ MISSING: AndroidManifest.xml")
+              # List lib files
+              libs = sorted([n for n in z.namelist() if n.startswith("lib/")])
+              if libs:
+                  print(f"  Libraries ({len(libs)} total):")
+                  for lib in libs[:10]:
+                      print(f"    - {lib}")
+                  if len(libs) > 10:
+                      print(f"    ... and {len(libs)-10} more")
+          PYEOF
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
