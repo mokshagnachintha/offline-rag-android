@@ -147,6 +147,51 @@ def _global_exception_handler(exc_type, exc_value, exc_tb):
 sys.excepthook = _global_exception_handler
 
 
+def _request_android_permissions():
+    """Request runtime permissions on Android 6.0+ (API 23+).
+    Uses plyer to display native permission dialogs.
+    """
+    try:
+        from plyer import permission
+        from plyer.platforms.android import api as android
+        
+        if not hasattr(android, 'check_permission'):
+            print("[permissions] Android API unavailable for permission checks")
+            return True
+        
+        required_permissions = [
+            "android.permission.READ_EXTERNAL_STORAGE",
+            "android.permission.WRITE_EXTERNAL_STORAGE",
+            "android.permission.INTERNET",
+            "android.permission.READ_MEDIA_IMAGES",
+            "android.permission.READ_MEDIA_VIDEO",
+        ]
+        
+        print(f"[permissions] Requesting {len(required_permissions)} permissions...")
+        
+        for perm in required_permissions:
+            try:
+                has_perm = android.check_permission(perm)
+                if not has_perm:
+                    print(f"[permissions] Requesting permission: {perm}")
+                    android.request_permission(perm)
+                else:
+                    print(f"[permissions] Already have permission: {perm}")
+            except Exception as e:
+                print(f"[permissions] Failed requesting {perm}: {e}")
+        
+        _write_diagnostic("[permissions] Completed permission requests")
+        return True
+        
+    except ImportError:
+        print("[permissions] Android permission API not available (desktop mode)")
+        return True
+    except Exception as e:
+        print(f"[permissions] Permission request failed: {e}")
+        _write_diagnostic(f"[permissions] Error: {e}")
+        return True  # Don't block app startup on permission errors
+
+
 def _start_android_service():
     """Start the foreground service that owns llama-server processes.
     No-op on desktop (ImportError is silently ignored).
@@ -208,6 +253,9 @@ class RAGApp(App):
         try:
             # Log build start
             _write_diagnostic(f"=== BUILD START ===")
+            
+            # Request Android permissions (non-blocking)
+            Clock.schedule_once(lambda *_: _request_android_permissions(), 0.1)
             
             # If there was an import error, show error screen
             if _import_error:
