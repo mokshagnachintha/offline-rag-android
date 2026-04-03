@@ -26,15 +26,15 @@ QWEN_MODEL: dict = {
     "size_mb":  1536,
 }
 
-# The primary Embedding model (Higher quality than Nomic)
-UAE_MODEL: dict = {
-    "label":    "UAE-Small-v1 (~50 MB) [MTEB 0.91, Superior Quality]",
-    "repo_id":  "WhereIsAI/UAE-Large-V1",  # Using UAE model
+# The primary Embedding model (Multimodal - text + images)
+CLIP_MODEL: dict = {
+    "label":    "CLIP ViT-B32 Multimodal (~330 MB) [Text + Image Understanding]",
+    "repo_id":  "Xenova/clip-vit-base-patch32-ggml",
     "filename": "ggml-model-q4_k_m.gguf",
-    "size_mb":  50,
+    "size_mb":  330,
 }
 
-MOBILE_MODELS: list[dict] = [QWEN_MODEL, UAE_MODEL]
+MOBILE_MODELS: list[dict] = [QWEN_MODEL, CLIP_MODEL]
 
 
 # ------------------------------------------------------------------ #
@@ -327,41 +327,41 @@ def auto_download_default(
       4. Download from HuggingFace
     """
     qwen_dest  = model_dest_path(QWEN_MODEL["filename"])
-    uae_dest = model_dest_path(UAE_MODEL["filename"])
+    clip_dest = model_dest_path(CLIP_MODEL["filename"])
 
-    def _prepare_uae():
-        # Step 2: Ensure UAE-Small-v1 embedding model is present
-        if os.path.isfile(uae_dest) and os.path.getsize(uae_dest) > 5 * 1024 * 1024:
+    def _prepare_clip():
+        # Step 2: Ensure CLIP multimodal embedding model is present
+        if os.path.isfile(clip_dest) and os.path.getsize(clip_dest) > 50 * 1024 * 1024:
             if on_progress: on_progress(1.0, "All models ready.")
             if on_done: on_done(True, "All models ready.")
             return
 
         # On Android, try extracting from APK first
         if os.environ.get("ANDROID_PRIVATE"):
-            def _after_uae_extract(ok, path_or_err):
+            def _after_clip_extract(ok, path_or_err):
                 if ok:
                     if on_progress: on_progress(1.0, "All models ready.")
                     if on_done: on_done(True, "All models ready.")
                 else:
                     # Fallback: download from HuggingFace
                     download_model(
-                        repo_id     = UAE_MODEL["repo_id"],
-                        filename    = UAE_MODEL["filename"],
+                        repo_id     = CLIP_MODEL["repo_id"],
+                        filename    = CLIP_MODEL["filename"],
                         on_progress = on_progress,
                         on_done     = on_done,
                     )
             _extract_model_from_apk(
                 asset_name   = "models/embedding.gguf",
-                dest_path    = uae_dest,
+                dest_path    = clip_dest,
                 on_progress  = on_progress,
-                on_done      = _after_uae_extract,
+                on_done      = _after_clip_extract,
             )
             return
 
         # Desktop / no APK: download directly from HF
         download_model(
-            repo_id     = UAE_MODEL["repo_id"],
-            filename    = UAE_MODEL["filename"],
+            repo_id     = CLIP_MODEL["repo_id"],
+            filename    = CLIP_MODEL["filename"],
             on_progress = on_progress,
             on_done     = on_done
         )
@@ -402,7 +402,7 @@ def auto_download_default(
             repo_id     = QWEN_MODEL["repo_id"],
             filename    = QWEN_MODEL["filename"],
             on_progress = on_progress,
-            on_done     = lambda ok, msg: _prepare_uae() if ok else on_done(False, msg),
+            on_done     = lambda ok, msg: _prepare_clip() if ok else on_done(False, msg),
         )
 
     # Start the chain

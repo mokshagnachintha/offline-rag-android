@@ -16,20 +16,20 @@ LLM_MODELS = {
 }
 
 EMBEDDING_MODELS = {
-    "uae-small-v1": {
-        "label": "UAE-Small-v1 (50 MB) [UPGRADED - MTEB 0.91]",
-        "repo_id": "WhereIsAI/UAE-Large-V1",
+    "clip-vit-b32": {
+        "label": "CLIP ViT-B32 Multimodal (330 MB) [Text + Image]",
+        "repo_id": "Xenova/clip-vit-base-patch32-ggml",
         "filename": "ggml-model-q4_k_m.gguf",
-        "size_mb": 50,
-        "dimensions": 1024,
-        "multimodal": False,
+        "size_mb": 330,
+        "dimensions": 512,
+        "multimodal": True,
     },
 }
 
 DEVICE_PRESETS = {
     "4gb-mobile": {
         "llm": "qwen3.5-1b-q4",
-        "embedding": "uae-small-v1",
+        "embedding": "clip-vit-b32",
         "max_context": 512,  # Practical limit on 4GB device
     },
 }

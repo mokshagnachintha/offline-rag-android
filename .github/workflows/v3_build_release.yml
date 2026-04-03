@@ -165,12 +165,12 @@ jobs:
           
           # UAE-Small-v1 embedding model - download for reference/testing only
           uae_path = hf_hub_download(
-              repo_id="WhereIsAI/UAE-Large-V1",
+              repo_id="Xenova/clip-vit-base-patch32-ggml",
               filename="ggml-model-q4_k_m.gguf",
               local_dir="model_cache",
               local_dir_use_symlinks=False,
           )
-          print(f"UAE-Small-v1 (reference): {os.path.getsize(uae_path)//1_048_576} MB")
+          print(f"CLIP ViT-B32 Multimodal (reference): {os.path.getsize(uae_path)//1_048_576} MB")
           
           print("\nNOTE: Models are NOT bundled in APK.")
           print("App will download to device storage on first launch.")
