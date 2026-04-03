@@ -54,6 +54,7 @@ def _global_exception_handler(exc_type, exc_value, exc_tb):
     """Log unhandled exceptions instead of silently crashing."""
     msg = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
     print(f"[CRASH] Unhandled exception:\n{msg}")
+    
     # Write to Android log file if possible
     priv = os.environ.get("ANDROID_PRIVATE", "")
     if priv:
@@ -75,8 +76,12 @@ def _start_android_service():
         svc = AndroidService("O-RAG AI Engine", "AI engine running in background")
         svc.start("start")
         print("[main] Android foreground service started.")
+    except ImportError:
+        print("[main] Android service not available (desktop mode)")
     except Exception as exc:
-        print(f"[main] Service start skipped: {exc}")
+        print(f"[main] Service start failed: {exc}")
+        import traceback
+        traceback.print_exc()
 
 
 def _models_ready() -> bool:
@@ -90,74 +95,95 @@ class RAGApp(App):
     title = "O-RAG"
 
     def build(self):
-        # Start analytics monitoring
-        start_continuous_monitoring(interval_seconds=5.0)
+        try:
+            # Start analytics monitoring
+            start_continuous_monitoring(interval_seconds=5.0)
 
-        # Start memory optimization for 4GB devices
-        start_memory_optimization()
+            # Start memory optimization for 4GB devices
+            start_memory_optimization()
 
-        root = BoxLayout(orientation="vertical")
-        with root.canvas.before:
-            Color(0.102, 0.102, 0.102, 1)   # #1a1a1a
-            bg = Rectangle()
-        root.bind(
-            pos =lambda w, _: setattr(bg, "pos",  w.pos),
-            size=lambda w, _: setattr(bg, "size", w.size),
-        )
+            root = BoxLayout(orientation="vertical")
+            with root.canvas.before:
+                Color(0.102, 0.102, 0.102, 1)   # #1a1a1a
+                bg = Rectangle()
+            root.bind(
+                pos =lambda w, _: setattr(bg, "pos",  w.pos),
+                size=lambda w, _: setattr(bg, "size", w.size),
+            )
 
-        sm = ScreenManager(transition=FadeTransition(duration=0.12))
+            sm = ScreenManager(transition=FadeTransition(duration=0.12))
 
-        # Add init screen (shown first if models not ready)
-        init_screen = InitScreen(name="init", on_ready=lambda: self._on_init_complete(sm))
-        sm.add_widget(init_screen)
+            # Add init screen (shown first if models not ready)
+            init_screen = InitScreen(name="init", on_ready=lambda: self._on_init_complete(sm))
+            sm.add_widget(init_screen)
 
-        # Add chat screen
-        sm.add_widget(ChatScreen(name="chat"))
+            # Add chat screen
+            sm.add_widget(ChatScreen(name="chat"))
 
-        # Add analytics dashboard screen
-        sm.add_widget(AnalyticsDashboardScreen(name="analytics"))
+            # Add analytics dashboard screen
+            sm.add_widget(AnalyticsDashboardScreen(name="analytics"))
 
-        root.add_widget(sm)
+            root.add_widget(sm)
 
-        # Start foreground service first
-        _start_android_service()
+            # Start foreground service first
+            _start_android_service()
 
-        # Route to appropriate screen based on model availability
-        Clock.schedule_once(lambda *_: self._route_initial_screen(sm, init_screen), 0.5)
+            # Route to appropriate screen based on model availability
+            Clock.schedule_once(lambda *_: self._route_initial_screen(sm, init_screen), 0.5)
 
-        return root
+            return root
+        except Exception as exc:
+            print(f"[CRASH] App build failed: {exc}")
+            import traceback
+            traceback.print_exc()
+            raise
 
     def _route_initial_screen(self, sm: ScreenManager, init_screen: InitScreen):
         """Route to init screen or chat based on model availability."""
-        if _models_ready():
-            # Models ready → go to chat
-            print("[main] Models ready, starting chat...")
-            init(on_done=lambda ok, msg: sm.switch_to(sm.get_screen("chat")))
-        else:
-            # Models not ready → show init screen and start downloads
-            print("[main] Models not ready, showing initialization screen...")
-            sm.current = "init"
-            
-            # Start downloads in background thread
-            import threading
-            def _start_downloads():
-                init_screen_with_downloads(
-                    init_screen,
-                    on_complete=lambda success: (
-                        self._on_download_complete(sm, success)
-                    ),
-                )
-            
-            threading.Thread(target=_start_downloads, daemon=True).start()
+        try:
+            if _models_ready():
+                # Models ready → go to chat
+                print("[main] Models ready, starting chat...")
+                init(on_done=lambda ok, msg: sm.switch_to(sm.get_screen("chat")))
+            else:
+                # Models not ready → show init screen and start downloads
+                print("[main] Models not ready, showing initialization screen...")
+                sm.current = "init"
+                
+                # Start downloads in background thread
+                import threading
+                def _start_downloads():
+                    try:
+                        init_screen_with_downloads(
+                            init_screen,
+                            on_complete=lambda success: (
+                                self._on_download_complete(sm, success)
+                            ),
+                        )
+                    except Exception as e:
+                        print(f"[main] Download thread error: {e}")
+                        import traceback
+                        traceback.print_exc()
+                
+                threading.Thread(target=_start_downloads, daemon=True).start()
+        except Exception as exc:
+            print(f"[main] Route to initial screen failed: {exc}")
+            import traceback
+            traceback.print_exc()
 
     def _on_download_complete(self, sm: ScreenManager, success: bool):
         """Called when model downloads complete."""
-        if success:
-            print("[main] Downloads complete, initializing pipeline...")
-            init(on_done=lambda ok, msg: sm.switch_to(sm.get_screen("chat")))
-        else:
-            print("[main] Download failed, allowing user to retry/skip")
-            # User can manually tap "Skip" button or retry
+        try:
+            if success:
+                print("[main] Downloads complete, initializing pipeline...")
+                init(on_done=lambda ok, msg: sm.switch_to(sm.get_screen("chat")))
+            else:
+                print("[main] Download failed, allowing user to retry/skip")
+                # User can manually tap "Skip" button or retry
+        except Exception as exc:
+            print(f"[main] Download complete handler failed: {exc}")
+            import traceback
+            traceback.print_exc()
 
     def _on_init_complete(self, sm: ScreenManager):
         """Called when init screen signals initialization complete."""
