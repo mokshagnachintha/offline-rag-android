@@ -87,10 +87,29 @@ jobs:
           echo "d56f5187479451eabf01fb78af6dfcb131b33910" > ~/.android/licenses/android-sdk-license
           echo "504667f4c0de7973335447fc6c3b3d07e678066c" > ~/.android/licenses/android-sdk-preview-license
           
-          # Run buildozer with 'yes' piping all 'y' responses to license prompts
-          echo "Starting build with automatic license acceptance..."
-          (yes 2>/dev/null || true) | timeout 5400 buildozer android release -v 2>&1 | tee build.log
-          BUILD_EXIT=$?
+          # Create expect script to handle interactive prompts
+          cat > /tmp/buildozer_expect.exp << 'EOF'
+          #!/usr/bin/expect -f
+          set timeout 5400
+          set cmd "buildozer android release -v"
+          
+          spawn bash -c $cmd
+          
+          # Handle all yes/no prompts
+          expect {
+            -re "Accept\?" {send "y\r"; exp_continue}
+            -re "y/N" {send "y\r"; exp_continue}
+            -re "Do you" {send "y\r"; exp_continue}
+            eof {catch wait result; exit [lindex $result 3]}
+          }
+          EOF
+          
+          chmod +x /tmp/buildozer_expect.exp
+          
+          # Run buildozer with expect for reliable prompt handling
+          echo "Starting build with expect-based license acceptance..."
+          expect /tmp/buildozer_expect.exp 2>&1 | tee build.log
+          BUILD_EXIT=${PIPESTATUS[0]}
           
           echo ""
           echo "Build finished with exit code: $BUILD_EXIT"
@@ -106,8 +125,8 @@ jobs:
             echo "✗ BUILD FAILED with exit code $BUILD_EXIT"
             echo "BUILD_SUCCESS=false" >> $GITHUB_ENV
             echo ""
-            echo "=== Last 30 lines of build log ==="
-            tail -30 build.log
+            echo "=== Last 40 lines of build log ==="
+            tail -40 build.log
           fi
 
       - name: Locate and verify APK
