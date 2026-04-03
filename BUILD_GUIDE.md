@@ -34,14 +34,14 @@ python verify_build.py
 
 ### Step 3: Model Files Present
 - [ ] `ggml-model-q4_k_m.gguf` exists (CLIP ViT-B32, ~330MB)
-- [ ] `Qwen3.5-1B-Instruct-Q4_K_M.gguf` exists (1.5GB+)
+- [ ] `Qwen2.5-3B-Instruct-Q4_K_M.gguf` exists (2.1GB+)
 - [ ] Files in project root directory
 - [ ] Models NOT in .gitignore (or included in buildozer spec)
 
 **Check with**:
 ```bash
 ls -lh *.gguf
-# Expected: Two files, 1.8GB+ total
+# Expected: Two files, 2.4GB+ total
 ```
 
 ### Step 4: Build Configuration Review

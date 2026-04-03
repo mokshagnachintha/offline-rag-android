@@ -20,10 +20,10 @@ from . import model_config
 
 # The primary Generation model (Qwen 3.5 only)
 QWEN_MODEL: dict = {
-    "label":    "Qwen 3.5 1B Instruct Q4_K_M (~1.5 GB) [NEW]",
-    "repo_id":  "Qwen/Qwen3.5-1B-Instruct-GGUF",
-    "filename": "Qwen3.5-1B-Instruct-Q4_K_M.gguf",
-    "size_mb":  1536,
+    "label":    "Qwen 2.5 3B Instruct Q4_K_M (~2.1 GB) [Upgraded]",
+    "repo_id":  "bartowski/Qwen2.5-3B-Instruct-GGUF",
+    "filename": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+    "size_mb":  2150,
 }
 
 # The primary Embedding model (Multimodal - text + images)

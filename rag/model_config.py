@@ -4,13 +4,13 @@ Supports model selection, device profiles, auto-fallback chains.
 """
 
 LLM_MODELS = {
-    "qwen3.5-1b-q4": {
-        "label": "Qwen 3.5 1B Q4 (1.5 GB) [UPGRADED]",
-        "repo_id": "Qwen/Qwen3.5-1B-Instruct-GGUF",
-        "filename": "Qwen3.5-1B-Instruct-Q4_K_M.gguf",
-        "size_mb": 1536,
+    "qwen2.5-3b-q4": {
+        "label": "Qwen 2.5 3B Q4 (2.1 GB) [UPGRADED]",
+        "repo_id": "bartowski/Qwen2.5-3B-Instruct-GGUF",
+        "filename": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+        "size_mb": 2150,
         "context_window": 32768,
-        "parameters": "1B",
+        "parameters": "3B",
         "is_fallback": False,
     },
 }
@@ -28,7 +28,7 @@ EMBEDDING_MODELS = {
 
 DEVICE_PRESETS = {
     "4gb-mobile": {
-        "llm": "qwen3.5-1b-q4",
+        "llm": "qwen2.5-3b-q4",
         "embedding": "clip-vit-b32",
         "max_context": 512,  # Practical limit on 4GB device
     },
