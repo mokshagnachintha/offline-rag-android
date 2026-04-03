@@ -40,6 +40,7 @@ class MD3Colors:
     # Text colors
     ON_PRIMARY = (1.0, 1.0, 1.0, 1)              # White text on primary
     ON_SECONDARY = (0.0, 0.0, 0.0, 1)            # Black text on secondary
+    ON_TERTIARY = (0.922, 0.922, 0.922, 1)       # Light text on tertiary
     ON_SURFACE = (0.922, 0.922, 0.922, 1)        # #EBEBEB - Primary text
     ON_SURFACE_VARIANT = (0.647, 0.647, 0.659, 1) # #A5A5A8 - Secondary text
 
