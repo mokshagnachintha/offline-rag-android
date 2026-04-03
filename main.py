@@ -82,7 +82,7 @@ try:
     _import_log("Loading RAG pipeline...")
     from rag.pipeline import init
     _import_log("Loading downloader...")
-    from rag.downloader import is_downloaded, QWEN_MODEL, NOMIC_MODEL
+    from rag.downloader import is_downloaded, QWEN_MODEL, CLIP_MODEL
     _import_log("Core imports successful")
 except Exception as e:
     _import_log(f"IMPORT ERROR: {type(e).__name__}: {e}")
@@ -100,7 +100,7 @@ except Exception as e:
     init = None
     is_downloaded = None
     QWEN_MODEL = None
-    NOMIC_MODEL = None
+    CLIP_MODEL = None
 
 # Analytics setup
 try:
@@ -211,13 +211,13 @@ def _start_android_service():
 
 def _models_ready() -> bool:
     """Check if both models are downloaded and ready."""
-    if is_downloaded is None or QWEN_MODEL is None or NOMIC_MODEL is None:
+    if is_downloaded is None or QWEN_MODEL is None or CLIP_MODEL is None:
         print("[main] Model checker not available")
         return False
     try:
         qwen_ok = is_downloaded(QWEN_MODEL["filename"])
-        nomic_ok = is_downloaded(NOMIC_MODEL["filename"])
-        return qwen_ok and nomic_ok
+        clip_ok = is_downloaded(CLIP_MODEL["filename"])
+        return qwen_ok and clip_ok
     except Exception as e:
         print(f"[main] Error checking models: {e}")
         return False
