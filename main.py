@@ -12,7 +12,7 @@ import os
 os.environ.setdefault("KIVY_LOG_LEVEL", "warning")
 
 from kivy.config import Config
-Config.set("kivy", "window_icon", "assets/icon.png")
+Config.set("kivy", "window_icon", "assets/app_icon.png")
 # ─────────────────────────────────────────────────────────────────── #
 
 # Keep input bar visible above the soft keyboard on Android
