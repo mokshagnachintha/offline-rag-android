@@ -11,20 +11,41 @@ import sys
 
 # Write startup marker to crash log for diagnostics
 _startup_log = os.path.expanduser("~/.orag.startup.log")
+
+# Try to also write to external storage if available
+_ext_log = None
 try:
-    with open(_startup_log, "a") as f:
-        import datetime
-        f.write(f"\n=== APP STARTUP {datetime.datetime.now()} ===\n")
+    import pathlib
+    # Try common Android external paths
+    for path in ["/sdcard/O-RAG", "/storage/emulated/0/O-RAG", "/data/media/O-RAG"]:
+        try:
+            pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+            _ext_log = os.path.join(path, "startup.log")
+            break
+        except:
+            pass
 except:
     pass
 
 def _write_diagnostic(msg: str):
-    """Write diagnostic message to log file."""
+    """Write diagnostic message to log files."""
     try:
         with open(_startup_log, "a") as f:
             f.write(msg + "\n")
     except:
         pass
+    
+    if _ext_log:
+        try:
+            with open(_ext_log, "a") as f:
+                f.write(msg + "\n")
+        except:
+            pass
+
+# Log startup
+import datetime
+_write_diagnostic(f"\n=== APP STARTUP {datetime.datetime.now()} ===")
+_write_diagnostic(f"External log: {_ext_log}")
 
 # ── Kivy config BEFORE any other kivy import ──────────────────────── #
 os.environ.setdefault("KIVY_LOG_LEVEL", "warning")
@@ -158,68 +179,26 @@ def _models_ready() -> bool:
 
 
 class ErrorScreen:
-    """Minimal error display screen for import/startup failures."""
+    """Ultra-minimal error display - just text."""
     @staticmethod
-    def create(error_msg: str, traceback_str: str):
+    def create(error_msg: str):
         try:
             from kivy.uix.boxlayout import BoxLayout
             from kivy.uix.label import Label
-            from kivy.graphics import Color, Rectangle
             
-            root = BoxLayout(orientation="vertical", padding=20, spacing=10)
+            root = BoxLayout(orientation="vertical")
             
-            # Background
-            with root.canvas.before:
-                Color(0.2, 0.05, 0.05, 1)  # Dark red
-                bg_rect = Rectangle()
-                
-            def update_bg(obj, val):
-                bg_rect.pos = root.pos
-                bg_rect.size = root.size
-            root.bind(pos=update_bg, size=update_bg)
-            
-            # Title
-            title = Label(
-                text="[b]ERROR[/b]",
-                markup=True,
-                size_hint_y=None,
-                height=50,
-                color=(1, 0.3, 0.3, 1)
+            # Just add the error text directly
+            label = Label(
+                text=error_msg,
+                font_size="20sp"
             )
-            root.add_widget(title)
-            
-            # Error message - truncated
-            msg = error_msg[:250] if error_msg else "Unknown error"
-            err_label = Label(
-                text=msg,
-                size_hint_y=None,
-                height=120,
-                color=(1, 1, 0.7, 1)
-            )
-            root.add_widget(err_label)
-            
-            # Spacer
-            root.add_widget(Label(size_hint_y=1))
-            
-            # Instructions
-            inst_label = Label(
-                text="Restart the app to try again",
-                size_hint_y=None,
-                height=40,
-                color=(0.5, 1, 0.8, 1)
-            )
-            root.add_widget(inst_label)
+            root.add_widget(label)
             
             return root
-        except Exception as e:
-            print(f"[ERROR] ErrorScreen creation failed: {e}")
-            # Fallback: extreme minimal widget
-            try:
-                root = BoxLayout()
-                root.add_widget(Label(text=f"ERROR\n{error_msg[:100]}"))
-                return root
-            except:
-                return BoxLayout()
+        except:
+            # Extreme fallback
+            return BoxLayout()
 
 
 class RAGApp(App):
@@ -227,36 +206,41 @@ class RAGApp(App):
 
     def build(self):
         try:
+            # Log build start
+            _write_diagnostic(f"=== BUILD START ===")
+            
             # If there was an import error, show error screen
             if _import_error:
-                print(f"[APP] Showing error screen due to import failure")
+                _write_diagnostic(f"Showing error screen: {_import_error}")
                 try:
-                    error_screen = ErrorScreen.create(
-                        f"Import Error: {type(_import_error).__name__}\n{str(_import_error)[:150]}",
-                        _import_traceback_str
+                    error_text = (
+                        f"ERROR LOADING APP\n\n"
+                        f"Type: {type(_import_error).__name__}\n"
+                        f"Message: {str(_import_error)[:300]}\n\n"
+                        f"This is a startup error. Logs saved to:\n"
+                        f"/sdcard/O-RAG/startup.log\n\n"
+                        f"Please restart the app."
                     )
+                    error_screen = ErrorScreen.create(error_text)
                     return error_screen
                 except Exception as e:
-                    print(f"[APP] Failed to create error screen: {e}")
-                    # Fallback: return the root widget if available
-                    try:
-                        root = BoxLayout(orientation="vertical")
-                        with root.canvas.before:
-                            Color(0.2, 0.1, 0.1, 1)
-                            Rectangle(pos=root.pos, size=root.size)
-                        root.add_widget(Label(text="ERROR: Startup Failed\nRestart the app"))
-                        return root
-                    except:
-                        return BoxLayout()
+                    _write_diagnostic(f"Error screen creation failed: {e}")
+                    return BoxLayout()
             
+            _write_diagnostic("Core imports OK, building normal UI")
             # Otherwise, proceed with normal startup
             return self._build_normal()
         except Exception as exc:
+            _write_diagnostic(f"Build failed: {type(exc).__name__}: {exc}")
             print(f"[CRASH] App build failed: {exc}")
             import traceback as tb
             tb.print_exc()
             # Return minimal widget to prevent complete crash
-            return BoxLayout()
+            try:
+                error_text = f"ERROR: {type(exc).__name__}\n{str(exc)[:200]}\n\nRestart the app"
+                return ErrorScreen.create(error_text)
+            except:
+                return BoxLayout()
     
     def _build_normal(self):
         try:
@@ -302,24 +286,25 @@ class RAGApp(App):
 
             return root
         except Exception as exc:
+            _write_diagnostic(f"Normal build failed: {type(exc).__name__}: {exc}")
             print(f"[CRASH] Normal build failed: {exc}")
             import traceback
             tb_str = traceback.format_exc()
             traceback.print_exc()
+            _write_diagnostic(tb_str)
+            
             # Return error screen instead of crashing
             try:
-                error_screen = ErrorScreen.create(
-                    f"Build Error: {type(exc).__name__}\n{str(exc)[:150]}",
-                    tb_str
+                error_text = (
+                    f"BUILD ERROR\n\n"
+                    f"Type: {type(exc).__name__}\n"
+                    f"Message: {str(exc)[:250]}\n\n"
+                    f"Logs saved to: /sdcard/O-RAG/startup.log\n"
+                    f"Restart the app."
                 )
-                return error_screen
+                return ErrorScreen.create(error_text)
             except:
-                root = BoxLayout(orientation="vertical")
-                with root.canvas.before:
-                    Color(0.2, 0.1, 0.1, 1)
-                    Rectangle(pos=root.pos, size=root.size)
-                root.add_widget(Label(text=f"Build Failed: {type(exc).__name__}\nRestart the app"))
-                return root
+                return BoxLayout()
 
     def _route_initial_screen(self, sm: ScreenManager, init_screen: InitScreen):
         """Route to init screen or chat based on model availability."""
