@@ -171,19 +171,20 @@ jobs:
         run: |
           echo "=== Build Summary ==="
           echo "Run: #${{ github.run_number }}"
-          echo "Status: ${{ job.status }}"
-          echo "Build Success: ${BUILD_SUCCESS:-unknown}"
           
-          if [ "$BUILD_SUCCESS" = "true" ]; then
+          if [ -f release/*.apk ]; then
             echo ""
-            echo "✓ APK READY"
-            echo "Download: Actions → orag-release-apk-${{ github.run_number }}"
+            echo "✓ APK READY FOR DOWNLOAD"
+            echo "Artifacts: orag-apk-${{ github.run_number }}"
+            ls -lh release/
           else
             echo ""
-            echo "✗ Build failed, check logs"
-            if [ -f build.log ]; then
+            echo "✗ Build finished but no APK generated"
+            echo ""
+            echo "Check build log: build-log-${{ github.run_number }}"
+            if [ -f buildozer.log ]; then
               echo ""
-              echo "Last 50 lines:"
-              tail -50 build.log
+              echo "Last 30 lines of build log:"
+              tail -30 buildozer.log
             fi
           fi
