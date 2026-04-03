@@ -8,8 +8,6 @@ on:
 
 env:
   BUILDOZER_ANDROID_ACCEPT_SDK_LICENSE: 1
-  ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
-  ANDROID_NDK_ROOT: ${{ runner.temp }}/android-ndk
 
 jobs:
   build:
