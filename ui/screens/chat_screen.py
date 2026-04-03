@@ -40,6 +40,7 @@ _DIVIDER   = MD3Colors.OUTLINE_VARIANT
 _DOC_CARD  = (0.12, 0.22, 0.17, 1)      # Keep for now, can update
 _ATTACH_BG = MD3Colors.SURFACE
 _ACCENT_ICON = MD3Colors.TERTIARY       # Updated accent for icons
+_GREEN     = MD3Colors.SUCCESS           # Success/positive action color
 
 
 # ------------------------------------------------------------------ #
