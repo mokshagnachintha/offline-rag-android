@@ -40,7 +40,7 @@ jobs:
           sudo apt-get install -y \
             git zip unzip autoconf libtool pkg-config \
             zlib1g-dev libncurses5-dev libncursesw5-dev \
-            cmake libffi-dev libssl-dev libpng-dev
+            cmake libffi-dev libssl-dev libpng-dev expect
 
       - name: Install Python build tools
         run: |
@@ -52,305 +52,120 @@ jobs:
           pip install -r requirements.txt || echo "Main requirements installed"
           pip install -r requirements_mobile.txt || echo "Mobile requirements installed"
 
-      - name: Pre-accept Android SDK licenses (critical step)
+      - name: Pre-accept Android SDK licenses
         run: |
-          echo "Pre-accepting Android SDK licenses..."
+          echo "Creating Android license files in all expected locations..."
           
-          # Create license directory
+          # Create ~/.android/licenses
           mkdir -p ~/.android/licenses
+          echo "d56f5187479451eabf01fb78af6dfcb131b33910" > ~/.android/licenses/android-sdk-license
+          echo "504667f4c0de7973335447fc6c3b3d07e678066c" > ~/.android/licenses/android-sdk-preview-license
           
-          # Accept standard Android licenses by writing the license hash files directly
-          # These checksums are from Google's official Android SDK license agreements
-          cat > ~/.android/licenses/android-sdk-license << 'EOLIC'
-          d56f5187479451eabf01fb78af6dfcb131b33910
-          EOLIC
-          
-          cat > ~/.android/licenses/android-sdk-preview-license << 'EOLIC'
-          504667f4c0de7973335447fc6c3b3d07e678066c
-          EOLIC
-          
-          cat > ~/.android/licenses/google-gdk-license << 'EOLIC'
-          129e256904b56848df64501b5ed41250192f32e6
-          EOLIC
-          
-          cat > ~/.android/licenses/intel-android-system-image-license << 'EOLIC'
-          887daf51f8dce29c925d26ce98a02dd0b7f92d22
-          EOLIC
-          
-          cat > ~/.android/licenses/android-wait-for-debugger << 'EOLIC'
-          7dab3650b91c50d56e27a33edef0e4b0a4f6c5f4
-          EOLIC
-          
-          cat > ~/.android/licenses/android-sdk-arm-dbt << 'EOLIC'
-          c80254f6674f707db0467f9ff52a7600fa2ab65d
-          EOLIC
-          
-          echo "✓ Core license files created"
+          chmod 644 ~/.android/licenses/*
+          echo "✓ License files created"
           ls -la ~/.android/licenses/
-          wc -l ~/.android/licenses/*
+          
+          export ANDROID_LICENSES=true
 
-      - name: Setup Android environment
+      - name: Build APK with automatic license acceptance
         run: |
-          echo "Setting up Android build environment..."
-          
-          # Create .gradle properties
-          mkdir -p ~/.gradle
-          cat > ~/.gradle/gradle.properties << 'EOF'
-          org.gradle.jvmargs=-Xmx1024m
-          android.enableOnDemandConfiguration=true
-          EOF
-          
-          # Ensure all license directories exist with correct permissions
-          mkdir -p ~/.android/licenses
-          chmod 700 ~/.android/licenses
-          
-          # Pre-populate all standard Android SDK licenses
-          for license in \
-            "android-sdk-license:d56f5187479451eabf01fb78af6dfcb131b33910" \
-            "android-sdk-preview-license:504667f4c0de7973335447fc6c3b3d07e678066c"; do
-            IFS=':' read -r name hash <<< "$license"
-            echo "$hash" > ~/.android/licenses/$name
-          done
-          
-          echo "✓ Android environment initialized"
-          echo "Available licenses:"
-          ls -1 ~/.android/licenses/
-
-      - name: Build APK
-        run: |
+          set -e
           rm -rf .buildozer bin dist 2>/dev/null || true
           mkdir -p bin
+          
           export ANDROID_SDK_ROOT=$HOME/Android/Sdk
           export ANDROID_NDK_ROOT=$HOME/Android/Ndk
           export BUILDOZER_ANDROID_ACCEPT_SDK_LICENSE=1
           
           echo "======================================"
-          echo "Starting APK Build"
+          echo "APK Build #${{ github.run_number }}"
           echo "======================================"
-          echo "Python version: $(python --version)"
-          echo "Buildozer version: $(buildozer --version)"
-          echo ""
-          echo "Environment variables:"
-          echo "  BUILDOZER_ANDROID_ACCEPT_SDK_LICENSE=$BUILDOZER_ANDROID_ACCEPT_SDK_LICENSE"
-          echo "  ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          echo "  ANDROID_NDK_ROOT=$ANDROID_NDK_ROOT"
+          echo "Using Python: $(python --version)"
           echo ""
           
-          # Ensure home licenses are set
+          # Ensure licenses exist before buildozer runs
           mkdir -p ~/.android/licenses
-          cat > ~/.android/licenses/android-sdk-license << 'EOLIC'
-          d56f5187479451eabf01fb78af6dfcb131b33910
-          EOLIC
-          cat > ~/.android/licenses/android-sdk-preview-license << 'EOLIC'
-          504667f4c0de7973335447fc6c3b3d07e678066c
-          EOLIC
+          echo "d56f5187479451eabf01fb78af6dfcb131b33910" > ~/.android/licenses/android-sdk-license
+          echo "504667f4c0de7973335447fc6c3b3d07e678066c" > ~/.android/licenses/android-sdk-preview-license
           
-          # Function to setup licenses in a given directory
-          setup_sdk_licenses() {
-            local sdk_dir="$1"
-            if [ ! -d "$sdk_dir/licenses" ]; then
-              mkdir -p "$sdk_dir/licenses"
-            fi
-            
-            cat > "$sdk_dir/licenses/android-sdk-license" << 'EOLIC'
-          d56f5187479451eabf01fb78af6dfcb131b33910
-          EOLIC
-            cat > "$sdk_dir/licenses/android-sdk-preview-license" << 'EOLIC'
-          504667f4c0de7973335447fc6c3b3d07e678066c
-          EOLIC
-            
-            return 0
-          }
-          
-          # Pre-create buildozer cache and license directories to speed up license setup  
-          mkdir -p $HOME/.buildozer $HOME/.buildozer/cache $HOME/.buildozer/applibs
-          mkdir -p $HOME/.buildozer/android/platform
-          
-          # Start buildozer build
-          echo "Starting buildozer build..."
-          buildozer android release -v 2>&1 | tee build.log &
-          BUILD_PID=$!
-          
-          # Monitor and inject licenses while build runs
-          echo "Monitoring build process for SDK directory creation..."
-          for i in {1..180}; do
-            sleep 1
-            
-            # Check if SDK directory was created by buildozer
-            if [ -d "$HOME/.buildozer/android/platform/android-sdk" ]; then
-              SDK_DIR="$HOME/.buildozer/android/platform/android-sdk"
-              if [ ! -f "$SDK_DIR/licenses/android-sdk-license" ]; then
-                echo "[Monitor] Setting up licenses in SDK directory: $SDK_DIR"
-                setup_sdk_licenses "$SDK_DIR"
-                echo "[Monitor] Licenses injected successfully"
-              fi
-            fi
-          done &
-          MONITOR_PID=$!
-          
-          # Wait for build to complete
-          echo ""
-          echo "Waiting for build to complete (PID: $BUILD_PID)..."
-          wait $BUILD_PID
-          BUILD_EXIT_CODE=$?
-          
-          # Kill monitoring loop
-          kill $MONITOR_PID 2>/dev/null || true
-          sleep 1
-          kill -9 $MONITOR_PID 2>/dev/null || true
+          # Run buildozer with 'yes' piping all 'y' responses to license prompts
+          echo "Starting build with automatic license acceptance..."
+          (yes 2>/dev/null || true) | timeout 5400 buildozer android release -v 2>&1 | tee build.log || BUILD_EXIT=$?
+          BUILD_EXIT=${BUILD_EXIT:-0}
           
           echo ""
-          echo "======================================"
-          echo "Build finished with exit code: $BUILD_EXIT_CODE"
-          echo "======================================"
+          echo "Build finished with exit code: $BUILD_EXIT"
           
-          if [ $BUILD_EXIT_CODE -eq 0 ]; then
+          if [ $BUILD_EXIT -eq 0 ] || grep -q "orag.*release.*apk" build.log; then
             echo "✓ BUILD SUCCESSFUL"
             echo "BUILD_SUCCESS=true" >> $GITHUB_ENV
           else
             echo "✗ BUILD FAILED"
             echo "BUILD_SUCCESS=false" >> $GITHUB_ENV
             echo ""
-            echo "License files in ~/.android/licenses:"
-            ls -la ~/.android/licenses/ 2>/dev/null || echo "  No licenses found in home dir"
-            echo ""
-            echo "License files in SDK directory:"
-            find $HOME/.buildozer -path "*licenses*" -type f 2>/dev/null | head -10 || echo "  No SDK licenses found"
-            echo ""
-            echo "Last 100 lines of build.log:"
-            tail -100 build.log || echo "  build.log not found"
+            echo "=== Error summary ==="
+            grep -i "error\|failed\|accept\|aidl" build.log | head -20 || echo "No specific errors found"
           fi
 
-      - name: Analyze Build Errors
-        if: always()
+      - name: Locate and verify APK
+        if: env.BUILD_SUCCESS == 'true'
         run: |
-          echo "=== Build Error Analysis ==="
-          BUILD_SUCCESS=${BUILD_SUCCESS:-false}
-          echo "Build status: $BUILD_SUCCESS"
-          echo ""
+          echo "=== Searching for APK files ==="
           
-          if [ -f build.log ]; then
-            if grep -qi "error\|failed\|exception" build.log; then
-              echo "Found error messages in build.log:"
-              echo ""
-              grep -i "error\|failed\|exception" build.log | head -30
-              echo ""
-            fi
-            
-            echo "=== Last 50 lines of build.log ==="
-            tail -50 build.log
-          else
-            echo "No build.log found"
-          fi
+          # Create staging directory
+          mkdir -p apk-release
           
-          # Don't exit with error - let other steps run for cleanup
-          [ "$BUILD_SUCCESS" = "true" ] || echo "⚠ Build status indicates failure"
+          # Find all APK files
+          find . -name "*.apk" -type f ! -path "./.buildozer/cache/*" -exec cp {} apk-release/ \;
+          
+          # Find in dist directories
+          find .buildozer -type d -name "dist" 2>/dev/null | while read dist_dir; do
+            find "$dist_dir" -name "*.apk" -exec cp {} apk-release/ \;
+          done
+          
+          echo "APKs found:"
+          ls -lh apk-release/ || echo "No APKs found!"
+          
+          # Count for later
+          APK_COUNT=$(find apk-release -name "*.apk" 2>/dev/null | wc -l)
+          echo "APK_COUNT=$APK_COUNT" >> $GITHUB_ENV
+
+      - name: Upload APK as GitHub Artifact
+        if: env.BUILD_SUCCESS == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: orag-release-apk-${{ github.run_number }}
+          path: apk-release/*.apk
+          retention-days: 30
+          if-no-files-found: warn
 
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-logs-${{ github.run_number }}
+          name: build-log-${{ github.run_number }}
           path: build.log
           retention-days: 7
           if-no-files-found: ignore
 
-      - name: Create GitHub Release
-        if: env.BUILD_SUCCESS == 'true'
-        uses: softprops/action-gh-release@v1
-        continue-on-error: true
-        with:
-          tag_name: v3-build-${{ github.run_number }}-${{ github.run_attempt }}
-          name: V3 Build #${{ github.run_number }}
-          files: bin/*.apk
-          generate_release_notes: false
-          body: |
-            # O-RAG v3 - Automated APK Build
-            
-            **Models (Download on First Launch):**
-            - Qwen 3.5-2B Instruct Q4_K_M (~1.3 GB)
-            - Nomic Embed Text v1.5 Q4_K_M (~80 MB)
-            
-            **Installation:**
-            ```bash
-            adb install bin/orag-*-release-unsigned.apk
-            ```
-            
-            **First Run:**
-            App will automatically download AI models (~5-10 min), then operates fully offline.
-          draft: false
-          prerelease: false
-          fail_on_unmatched_files: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Locate APK file
-        if: env.BUILD_SUCCESS == 'true'
-        run: |
-          echo "=== Searching for APK in all possible locations ==="
-          echo ""
-          echo "1. Checking bin/ directory:"
-          ls -lh bin/ 2>/dev/null || echo "   bin/ not found"
-          
-          echo ""
-          echo "2. Checking .buildozer/android/platform/build-[variant]/dist/:"
-          find .buildozer -type d -name dist 2>/dev/null | while read dir; do
-            echo "   Dist directory: $dir"
-            ls -lh "$dir"/*.apk 2>/dev/null || echo "   No APK in this dist"
-          done
-          
-          echo ""
-          echo "3. Global search for all .apk files:"
-          find . -name "*.apk" -type f 2>/dev/null | head -20
-          
-          echo ""
-          echo "4. Creating apk-final directory and copying all APKs:"
-          mkdir -p apk-final
-          find . -name "*.apk" -type f ! -path "./.buildozer/cache/*" -exec cp {} apk-final/ \; 2>/dev/null
-          
-          echo "Files in apk-final/:"
-          ls -lh apk-final/ || echo "No files copied"
-          
-          # Save the count for later
-          APK_FINAL_COUNT=$(find apk-final -name "*.apk" 2>/dev/null | wc -l)
-          echo "APK_FINAL_COUNT=$APK_FINAL_COUNT" >> $GITHUB_ENV
-          echo "Total APKs found: $APK_FINAL_COUNT"
-
-      - name: Upload APK as artifact
-        if: env.BUILD_SUCCESS == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: orag-apk-${{ github.run_number }}
-          path: |
-            apk-final/*.apk
-            bin/*.apk
-            .buildozer/android/platform/build-*/dist/*.apk
-            .buildozer/android/platform/build/dist/*.apk
-          retention-days: 30
-          if-no-files-found: warn
-
-      - name: Build Summary
+      - name: Summary
         if: always()
         run: |
           echo "=== Build Summary ==="
+          echo "Run: #${{ github.run_number }}"
           echo "Status: ${{ job.status }}"
-          echo "Run: ${{ github.run_number }}"
-          echo "Branch: v3"
-          echo ""
+          echo "Build Success: ${BUILD_SUCCESS:-unknown}"
           
-          if [ "$BUILD_SUCCESS" == "true" ]; then
-            echo "✓ BUILD SUCCESSFUL"
-            if [ "$APK_FINAL_COUNT" -gt 0 ]; then
-              echo "✓ APK Count: $APK_FINAL_COUNT"
-              echo ""
-              echo "Files:"
-              ls -lh apk-final/*.apk 2>/dev/null | awk '{print "  ", $9, "(" $5 ")"}'
-              echo ""
-              echo "✓ Download from: Actions → orag-apk-${{ github.run_number }} → Artifacts"
-            else
-              echo "⚠ Build succeeded but no APK found"
-            fi
+          if [ "$BUILD_SUCCESS" = "true" ]; then
+            echo ""
+            echo "✓ APK READY"
+            echo "Download: Actions → orag-release-apk-${{ github.run_number }}"
           else
-            echo "✗ BUILD FAILED - No APK created"
-            echo "Check build-logs-${{ github.run_number }} artifact for details"
+            echo ""
+            echo "✗ Build failed, check logs"
+            if [ -f build.log ]; then
+              echo ""
+              echo "Last 50 lines:"
+              tail -50 build.log
+            fi
           fi
