@@ -88,9 +88,13 @@ jobs:
           export BUILDOZER_ANDROID_ACCEPT_SDK_LICENSE=1
           export ANDROID_SDK_ROOT=$HOME/Android/Sdk
           export ANDROID_NDK_ROOT=$HOME/Android/Ndk
-          export P4A_RECIPES=$(pwd)/p4a-recipes
           
-          echo "P4A_RECIPES=$P4A_RECIPES"
+          # Copy custom recipes to buildozer's recipe cache
+          # Buildozer looks for recipes in ~/.buildozer/android/platform/recipes-sources
+          echo "Setting up custom recipes..."
+          mkdir -p ~/.buildozer/android/platform/recipes-sources
+          cp -r p4a-recipes/* ~/.buildozer/android/platform/recipes-sources/ 2>/dev/null || true
+          ls -la ~/.buildozer/android/platform/recipes-sources/ || echo "Recipe copy failed, will try alternate method"
           
           # Pre-accept licenses one more time during build
           mkdir -p ~/.android/licenses
