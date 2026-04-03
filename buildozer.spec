@@ -6,8 +6,6 @@ package.domain = com.yourname
 
 source.dir    = .
 source.include_exts = py,png,jpg,kv,atlas,db,gguf
-# Include the pre-built ARM64 llama-server binary (no extension)
-source.include_patterns = llama-server-arm64
 source.exclude_dirs = __pycache__,.git,.venv,venv,.mypy_cache,quantization,bin,p4a-recipes,llama_cpp_src,build_log_dl,build_log_dl2,llamacpp_bin,quantize,evaluation,compressed,.github
 
 version = 1.0.0
